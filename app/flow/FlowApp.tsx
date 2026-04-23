@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ProfileCircle, SearchNormal1, Calendar1,
-  Microphone2, Chart, TickCircle, Clock, Edit2, Trash,
+  Microphone2, TickCircle, Clock, Edit2, Trash,
   Magicpen, Health, Sun1, Routing2, Briefcase, People,
   Coffee, Activity, Drop,
   CloudChange, Flash, Medal, LocationDiscover,
+  Map1, Car, ChartSquare,
   type Icon,
 } from 'iconsax-react';
+import { PersonSimpleWalk, Train, Timer, Umbrella } from '@phosphor-icons/react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -36,14 +38,14 @@ const TASK_ICON_MAP: Record<string, Icon> = {
 
 const NUDGE_ICON_MAP: Record<string, Icon> = {
   routing: Routing2, health: Health, cloud: CloudChange,
-  flash: Flash, medal: Medal, location: LocationDiscover,
+  flash: Flash, medal: Medal, location: LocationDiscover, car: Car,
 };
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
 const WEEK_DAYS = [
-  { abbr: 'MON', num: 21 }, { abbr: 'TUE', num: 22 }, { abbr: 'WED', num: 23 },
-  { abbr: 'THU', num: 24 }, { abbr: 'FRI', num: 25 }, { abbr: 'SAT', num: 26 }, { abbr: 'SUN', num: 27 },
+  { abbr: 'MON', num: 20 }, { abbr: 'TUE', num: 21 }, { abbr: 'WED', num: 22 },
+  { abbr: 'THU', num: 23 }, { abbr: 'FRI', num: 24 }, { abbr: 'SAT', num: 25 },
 ];
 
 const INITIAL_REMINDERS: Task[] = [
@@ -54,11 +56,10 @@ const INITIAL_REMINDERS: Task[] = [
 ];
 
 const INITIAL_EVENTS: Task[] = [
-  { id: 'e1', title: 'Commute to office', time: '7:40 AM', icon: '🚇', iconName: 'routing', iconBg: '#ede9fe', iconColor: '#C4B5FD', sub: 'Leave by 7:40 AM · 32 min', done: false, snoozed: false, category: 'commute' },
-  { id: 'e2', title: 'Team standup', time: '9:00 AM', icon: '💼', iconName: 'briefcase', iconBg: '#f4f0ff', iconColor: '#8b72e0', sub: 'Google Meet · 15 min', done: false, snoozed: false, category: 'meeting' },
-  { id: 'e3', title: 'Lunch break', time: '1:00 PM', icon: '🥗', iconName: 'coffee', iconBg: '#edfaf3', iconColor: '#3daa6e', sub: '1:00 PM · 45 min', done: false, snoozed: false, category: 'personal' },
-  { id: 'e4', title: 'Product review', time: '3:00 PM', icon: '🎙', iconName: 'people', iconBg: '#f4f0ff', iconColor: '#8b72e0', sub: 'Conference room B · 1h', done: false, snoozed: false, category: 'meeting' },
-  { id: 'e5', title: 'Evening run', time: '5:30 PM', icon: '🏃', iconName: 'activity', iconBg: '#edfaf3', iconColor: '#3daa6e', sub: '5:30 PM · 30 min', done: false, snoozed: false, category: 'personal' },
+  { id: 'e1', title: 'Travel to Office', time: '7:40 AM', icon: '🚇', iconName: 'routing', iconBg: '#f0f0f0', iconColor: '#9a9a9a', sub: 'Leave by 7:40 AM · 32 min', done: false, snoozed: false, category: 'commute' },
+  { id: 'e2', title: 'Team Standup', time: '9:00 AM', icon: '💼', iconName: 'briefcase', iconBg: '#f0f0f0', iconColor: '#9a9a9a', sub: 'Google Meet · 15 min', done: false, snoozed: false, category: 'meeting' },
+  { id: 'e3', title: 'Product Review', time: '3:00 PM', icon: '🎙', iconName: 'people', iconBg: '#f0f0f0', iconColor: '#9a9a9a', sub: 'Conference Room B · 1 hr', done: false, snoozed: false, category: 'meeting' },
+  { id: 'e4', title: 'Friends Catchup', time: '4:00 PM', icon: '💼', iconName: 'briefcase', iconBg: '#f0f0f0', iconColor: '#9a9a9a', sub: 'Google Meet · 15 min', done: false, snoozed: false, category: 'personal' },
 ];
 
 const CATEGORY_STYLE: Record<string, { bg: string; color: string; label: string }> = {
@@ -78,7 +79,7 @@ const AI_NUDGES = [
   { iconName: 'routing', text: 'Traffic 18% heavier. Leave at 7:35 to stay on time.', tag: 'Commute' },
   { iconName: 'health', text: "Medication missed twice. I've rescheduled it for tomorrow.", tag: 'Health' },
   { iconName: 'cloud', text: 'Light rain at 7:40 AM. Pack an umbrella today.', tag: 'Weather' },
-  { iconName: 'flash', text: 'Peak focus window: 9–11 AM. Distractions cleared.', tag: 'Routine' },
+  { iconName: 'car', text: 'Peak focus window: 9–11 AM.', tag: 'Routine' },
   { iconName: 'medal', text: "3-day morning stretch streak. Keep it going!", tag: 'Habit' },
   { iconName: 'location', text: 'Metro Line 2 delayed. Bus route saves 8 min.', tag: 'Commute' },
 ];
@@ -116,7 +117,7 @@ function uid() { return Math.random().toString(36).slice(2, 9); }
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FlowApp() {
-  const [activeTab, setActiveTab]         = useState<'reminders' | 'events'>('reminders');
+  const [activeTab, setActiveTab]         = useState<'reminders' | 'events'>('events');
   const [reminders, setReminders]         = useState<Task[]>(INITIAL_REMINDERS);
   const [events, setEvents]               = useState<Task[]>(INITIAL_EVENTS);
   const [showNotif, setShowNotif]         = useState(false);
@@ -138,7 +139,7 @@ export default function FlowApp() {
   const [editTimeVal, setEditTimeVal]     = useState('');
   const [selectedDay, setSelectedDay]     = useState(22);
   const [deletingIds, setDeletingIds]     = useState<Set<string>>(new Set());
-  const [nudgeIdx, setNudgeIdx]           = useState(0);
+  const [nudgeIdx, setNudgeIdx]           = useState(3);
   const [nudgeFading, setNudgeFading]     = useState(false);
   const [downloadState, setDownloadState] = useState<'idle' | 'loading' | 'done'>('idle');
   const [isMobile, setIsMobile]           = useState(false);
@@ -306,75 +307,69 @@ export default function FlowApp() {
   const appContent = (
     <>
       {/* Scrollable */}
-      <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden', paddingTop: isMobile ? 'max(16px, env(safe-area-inset-top))' : 60, paddingBottom: 100, background: '#fafafa' }}>
-
-        {/* Top nav */}
-        <div style={{ padding: '14px 22px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button style={iconBtnStyle}><ProfileCircle size={18} color="#888" variant="Linear" /></button>
-          <button style={iconBtnStyle}><SearchNormal1 size={16} color="#888" variant="Linear" /></button>
-        </div>
+      <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden', paddingTop: isMobile ? 'max(16px, env(safe-area-inset-top))' : 60, paddingBottom: 100, background: '#f6f5fb' }}>
 
         {/* Greeting */}
-        <div style={{ padding: '10px 24px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-            <span style={{ fontSize: 30, fontWeight: 700, color: '#0a0a0a', letterSpacing: -1, lineHeight: 1.1 }}>Good morning</span>
-            <span style={{ fontSize: 30, fontWeight: 700, color: '#3EAF78', lineHeight: 1.1 }}>•</span>
+        <div style={{ padding: '18px 24px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 30, fontWeight: 700, color: '#0a0a0a', letterSpacing: -0.8, lineHeight: 1.1 }}>Good Morning</span>
+            <img src="/sun.png" alt="" style={{ width: 42, height: 42, objectFit: 'contain' }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }}>
-            <Calendar1 size={12} color="#c0c0c0" variant="Linear" />
-            <span style={{ fontSize: 13, color: '#aaa', fontWeight: 400 }}>Tuesday, April 22</span>
-            <span style={{ color: '#e0e0e0' }}>·</span>
-            <span style={{ fontSize: 13, color: '#aaa' }}>🌧 18°</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 6 }}>
+            <Calendar1 size={13} color="#b0b0b0" variant="Linear" />
+            <span style={{ fontSize: 13, color: '#b0b0b0', fontWeight: 400 }}>Wednesday, April 22</span>
+            <Sun1 size={14} color="#b0b0b0" variant="Linear" />
+            <span style={{ fontSize: 13, color: '#b0b0b0' }}>18°</span>
           </div>
         </div>
 
         {/* AI card */}
-        <div style={{ margin: '14px 24px 0', background: '#f0ecff', borderRadius: 18, padding: '14px 14px 12px', border: '1px solid #e4deff', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: '50%', background: 'rgba(155,137,212,0.12)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: -15, right: 30, width: 60, height: 60, borderRadius: '50%', background: 'rgba(155,137,212,0.08)', pointerEvents: 'none' }} />
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
-                <Magicpen size={12} color="#8b72e0" variant="Linear" />
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#8b72e0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Flow</span>
+        <div style={{ margin: '16px 20px 0', background: '#c4b5fd', borderRadius: 20, padding: '14px 16px 0', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', gap: 0, alignItems: 'flex-end' }}>
+            <div style={{ flex: 1, minWidth: 0, paddingBottom: 14 }}>
+              {/* FLOW AI badge */}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 12px 5px 9px', marginBottom: 12 }}>
+                <img src="/star.svg" alt="" style={{ width: 10, height: 10 }} />
+                <span style={{ fontSize: 9, fontWeight: 600, color: '#52525B', letterSpacing: '0.03em' }}>FLOW AI</span>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#2d2060', lineHeight: 1.35, marginBottom: 10 }}>You&apos;re on track. Leave at 7:40 AM</div>
-              <div style={{ borderTop: '1px dashed rgba(155,137,212,0.35)', paddingTop: 8, height: 40, overflow: 'hidden', position: 'relative' }}>
-                <div style={{ opacity: nudgeFading ? 0 : 1, transition: 'opacity 0.3s ease', display: 'flex', alignItems: 'flex-start', gap: 6, position: 'absolute', top: 8, left: 0, right: 0 }}>
-                  <div style={{ flexShrink: 0, lineHeight: 1, marginTop: 1 }}>
-                    {NudgeIconComp ? <NudgeIconComp size={13} color="#7c6ee0" variant="Bulk" /> : null}
+              {/* Main heading */}
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#27272A', lineHeight: 1.35, marginBottom: 10, letterSpacing: '-0.2px' }}>You&apos;re on track. Leave at 7:40 AM</div>
+              {/* Dashed divider + nudge — minHeight keeps card height consistent for all nudge texts */}
+              <div style={{ borderTop: '1px dashed rgba(228, 228, 231, 1) ', paddingTop: 10, minHeight: 52 }}>
+                <div style={{ opacity: nudgeFading ? 0 : 1, transition: 'opacity 0.3s ease', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                  <div style={{ flexShrink: 0, marginTop: 1 }}>
+                    {NudgeIconComp ? <NudgeIconComp size={14} color="#52525B" variant="Linear" /> : null}
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <span style={{ fontSize: 11, color: '#5a4a8a', lineHeight: 1.4 }}>{nudge.text}</span>
-                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 400, color: '#52525B', lineHeight: 1.45 }}>{nudge.text}</span>
                 </div>
               </div>
             </div>
-            <FlowIllustration />
+            {/* Flower anchored to card bottom */}
+            <img src="/banner-flower.png" alt="" style={{ width: 80, height: 108, objectFit: 'contain', flexShrink: 0, marginRight: -10 }} />
           </div>
         </div>
 
         {/* Calendar strip */}
-        <div style={{ margin: '16px 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ margin: '20px 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {WEEK_DAYS.map(d => {
             const active = selectedDay === d.num;
             return (
-              <button key={d.num} onClick={() => setSelectedDay(d.num)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: 44, padding: '8px 2px 6px', border: 'none', cursor: 'pointer', borderRadius: 16, background: active ? '#fff' : 'transparent', transition: 'all 0.18s ease' }}>
-                <span style={{ fontSize: 18, fontWeight: active ? 700 : 400, lineHeight: 1.15, color: active ? '#0a0a0a' : '#b8b8b8', letterSpacing: '-0.4px' }}>{d.num}</span>
-                <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: active ? '#3EAF78' : '#c8c8c8' }}>{d.abbr}</span>
+              <button key={d.num} onClick={() => setSelectedDay(d.num)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 50, padding: '10px 10px 8px', border: 'none', cursor: 'pointer', borderRadius: 16, background: active ? '#ece8fb' : 'transparent', transition: 'all 0.18s ease' }}>
+                <span style={{ fontSize: 22, fontWeight: active ? 700 : 400, lineHeight: 1.1, color: active ? '#111' : '#b0b0b0', letterSpacing: '-0.5px' }}>{d.num}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: active ? '#8b72e0' : '#c0c0c0' }}>{d.abbr}</span>
               </button>
             );
           })}
         </div>
 
-        <div style={{ margin: '14px 24px 0', borderTop: '1px dashed #e8e8e8' }} />
+        <div style={{ margin: '16px 20px 0', borderTop: '1px dashed #dddbe8' }} />
 
         {/* Tabs */}
-        <div style={{ display: 'flex', padding: '10px 24px 0' }}>
+        <div style={{ display: 'flex', padding: '12px 24px 0' }}>
           {(['reminders', 'events'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, background: 'none', border: 'none', fontFamily: 'inherit', fontSize: 14, fontWeight: activeTab === tab ? 600 : 400, color: activeTab === tab ? '#0a0a0a' : '#c0c0c0', padding: '7px 0', cursor: 'pointer', position: 'relative', textTransform: 'capitalize' }}>
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, background: 'none', border: 'none', fontFamily: 'inherit', fontSize: 15, fontWeight: activeTab === tab ? 600 : 400, color: activeTab === tab ? '#0a0a0a' : '#c0c0c0', padding: '7px 0', cursor: 'pointer', position: 'relative', textTransform: 'capitalize' }}>
               {tab}
-              {activeTab === tab && <div style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 2, background: '#0a0a0a', borderRadius: 2 }} />}
+              {activeTab === tab && <div style={{ position: 'absolute', bottom: 0, left: '15%', right: '15%', height: 2, background: '#0a0a0a', borderRadius: 2 }} />}
             </button>
           ))}
         </div>
@@ -402,7 +397,7 @@ export default function FlowApp() {
               {events.filter(e => e.time.includes('AM')).map(task => (
                 <TaskRow key={task.id} task={task} deleting={deletingIds.has(task.id)}
                   onDone={() => markDone(task.id)} onSnooze={() => snoozeTask(task.id)}
-                  onDelete={() => deleteTask(task.id)} onEdit={() => openEdit(task)} showCategory />
+                  onDelete={() => deleteTask(task.id)} onEdit={() => openEdit(task)} showCategory={false} />
               ))}
             </div>
             <SectionLabel>Afternoon</SectionLabel>
@@ -410,7 +405,7 @@ export default function FlowApp() {
               {events.filter(e => e.time.includes('PM')).map(task => (
                 <TaskRow key={task.id} task={task} deleting={deletingIds.has(task.id)}
                   onDone={() => markDone(task.id)} onSnooze={() => snoozeTask(task.id)}
-                  onDelete={() => deleteTask(task.id)} onEdit={() => openEdit(task)} showCategory />
+                  onDelete={() => deleteTask(task.id)} onEdit={() => openEdit(task)} showCategory={false} />
               ))}
             </div>
           </div>
@@ -418,17 +413,18 @@ export default function FlowApp() {
       </div>
 
       {/* Bottom bar */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#fafafa', borderTop: '1px solid #ebebeb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 36, paddingRight: 36, paddingTop: 16, paddingBottom: isMobile ? 'max(24px, env(safe-area-inset-bottom))' : 24, zIndex: 50 }}>
-        <button onClick={() => setShowReport(true)} style={{ ...navBtnStyle, background: '#f0f0f0' }}>
-          <Chart size={18} color="#888" variant="Linear" />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#f6f5fb', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 36, paddingRight: 36, paddingTop: 14, paddingBottom: isMobile ? 'max(22px, env(safe-area-inset-bottom))' : 22, zIndex: 50 }}>
+        {/* Left: analytics */}
+        <button onClick={() => setShowReport(true)} style={{ width: 48, height: 48, borderRadius: 14, border: 'none', background: '#eeeef0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <ChartSquare size={20} color="#27272A" variant="Linear" />
         </button>
-        {/* Center: unified add+voice button */}
-        <button onClick={() => setShowAdd(true)} style={{ width: 54, height: 54, borderRadius: 18, background: '#0a0a0a', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,.2)' }}>
-          <Microphone2 size={22} color="#fff" variant="Linear" />
+        {/* Center: large mic pill */}
+        <button onClick={() => setShowAdd(true)} style={{ width: 80, height: 60, borderRadius: 36, background: '#27272A', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 6px 24px rgba(0,0,0,.25)', marginTop: -10 }}>
+          <Microphone2 size={28} color="#fff" variant="Linear" />
         </button>
-        {/* Right: commute view */}
-        <button onClick={() => setShowCommute(true)} style={{ ...navBtnStyle, background: '#f0f0f0' }}>
-          <Routing2 size={18} color="#888" variant="Linear" />
+        {/* Right: map */}
+        <button onClick={() => setShowCommute(true)} style={{ width: 48, height: 48, borderRadius: 14, border: 'none', background: '#eeeef0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <Map1 size={20} color="#27272A" variant="Linear" />
         </button>
       </div>
 
@@ -602,7 +598,7 @@ export default function FlowApp() {
 
   if (isMobile) {
     return (
-      <div style={{ position: 'fixed', inset: 0, fontFamily: 'var(--font-dm-sans, system-ui)', background: '#fafafa', overflow: 'hidden' }}>
+      <div style={{ position: 'fixed', inset: 0, fontFamily: 'var(--font-dm-sans, system-ui)', background: '#f6f5fb', overflow: 'hidden' }}>
         {appContent}
       </div>
     );
@@ -613,14 +609,14 @@ export default function FlowApp() {
       <div style={{ width: 390, height: 844, background: '#1a1a1a', borderRadius: 54, position: 'relative', boxShadow: '0 0 0 1px #2a2a2a, 0 0 0 2px #0a0a0a, 0 40px 80px rgba(0,0,0,.35), 0 20px 40px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08)', overflow: 'hidden', flexShrink: 0 }}>
         <div style={{ position: 'absolute', left: -3, top: 140, width: 4, height: 36, background: '#2a2a2a', borderRadius: '2px 0 0 2px', boxShadow: '0 52px 0 #2a2a2a, 0 100px 0 #2a2a2a' }} />
         <div style={{ position: 'absolute', right: -3, top: 180, width: 4, height: 68, background: '#2a2a2a', borderRadius: '0 2px 2px 0' }} />
-        <div style={{ position: 'absolute', inset: 6, borderRadius: 48, background: '#fafafa', overflow: 'hidden', transform: 'translateZ(0)', clipPath: 'inset(0 round 48px)' }}>
-          {/* Dynamic Island */}
-          <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, background: '#0a0a0a', borderRadius: 20, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <div style={{ position: 'absolute', inset: 6, borderRadius: 48, background: '#f6f5fb', overflow: 'hidden', transform: 'translateZ(0)', clipPath: 'inset(0 round 48px)' }}>
+          {/* Dynamic Island — always on top of all overlays */}
+          <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, background: '#0a0a0a', borderRadius: 20, zIndex: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <div style={{ width: 7, height: 7, background: '#1a1a1a', borderRadius: '50%' }} />
             <div style={{ width: 11, height: 11, background: '#1c1c1c', borderRadius: '50%', border: '2px solid #2a2a2a' }} />
           </div>
-          {/* Status bar */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60, display: 'flex', alignItems: 'flex-end', padding: '0 28px 8px', justifyContent: 'space-between', zIndex: 99, background: '#fafafa' }}>
+          {/* Status bar — always on top of all overlays */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60, display: 'flex', alignItems: 'flex-end', padding: '0 28px 8px', justifyContent: 'space-between', zIndex: 249, background: 'transparent', pointerEvents: 'none' }}>
             <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.3px', color: '#0a0a0a' }}>9:41</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><StatusIcons /></div>
           </div>
@@ -693,7 +689,7 @@ function FlowIllustration() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#c8c8c8', padding: '12px 24px 0' }}>
+    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#bebebe', padding: '16px 24px 4px' }}>
       {children}
     </div>
   );
@@ -754,7 +750,7 @@ function TaskRow({ task, deleting, onDone, onSnooze, onDelete, onEdit, showCateg
 
   return (
     <div className={deleting ? 'item-deleting' : ''}
-      style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px dashed #ededed' }}>
+      style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px dashed #dddbe8' }}>
       <div style={{ position: 'absolute', inset: 0, background: `rgba(61,170,110,${dragX > 0 ? progress * 0.2 : 0})`, display: 'flex', alignItems: 'center', paddingLeft: 14, transition: dragging ? 'none' : 'background 0.3s' }}>
         <TickCircle size={18} color="#3daa6e" variant="Bulk" style={{ opacity: dragX > 0 ? progress : 0, transition: dragging ? 'none' : 'opacity 0.3s' }} />
       </div>
@@ -763,30 +759,29 @@ function TaskRow({ task, deleting, onDone, onSnooze, onDelete, onEdit, showCateg
       </div>
       <div
         onPointerDown={onPtrDown} onPointerMove={onPtrMove} onPointerUp={onPtrUp} onPointerCancel={onPtrUp}
-        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', cursor: 'grab', position: 'relative', opacity: task.done ? 0.45 : 1, transform: `translateX(${dragX}px)`, transition: dragging ? 'none' : 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)', background: '#fafafa', touchAction: 'pan-y', userSelect: 'none' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', cursor: 'grab', position: 'relative', opacity: task.done ? 0.45 : 1, transform: `translateX(${dragX}px)`, transition: dragging ? 'none' : 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)', background: '#f6f5fb', touchAction: 'pan-y', userSelect: 'none' }}
       >
-        <div style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          {IconComp ? <IconComp size={26} color={task.iconColor} variant="Bulk" /> : <span style={{ fontSize: 22, lineHeight: 1 }}>{task.icon}</span>}
+        <div style={{ width: 38, height: 38, borderRadius: 11, background: '#efefef', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {IconComp ? <IconComp size={19} color="#9a9a9a" variant="Linear" /> : <span style={{ fontSize: 18, lineHeight: 1 }}>{task.icon}</span>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, letterSpacing: '-0.2px', textDecoration: task.done ? 'line-through' : 'none', color: task.done ? '#c0c0c0' : '#0a0a0a' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.2px', textDecoration: task.done ? 'line-through' : 'none', color: task.done ? '#c0c0c0' : '#0a0a0a' }}>
             {task.title}
             {task.snoozed && <span style={{ fontSize: 10, fontWeight: 600, background: '#fffbeb', color: '#b45309', borderRadius: 5, padding: '2px 5px', marginLeft: 6 }}>+15m</span>}
           </div>
-          <div style={{ fontSize: 11, color: '#b0b0b0', marginTop: 2 }}>{task.sub}</div>
+          <div style={{ fontSize: 12, color: '#b8b8b8', marginTop: 2 }}>{task.sub}</div>
         </div>
-        {showCategory && cat
-          ? <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', background: cat.bg, color: cat.color, borderRadius: 6, padding: '2px 7px', flexShrink: 0 }}>{cat.label}</span>
-          : <span style={{ fontSize: 13, color: '#c0c0c0', flexShrink: 0 }}>{task.time}</span>
-        }
+        {showCategory && cat && (
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', background: cat.bg, color: cat.color, borderRadius: 6, padding: '2px 7px', flexShrink: 0 }}>{cat.label}</span>
+        )}
       </div>
       {showMenu && (
-        <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 20, display: 'flex', gap: 5, background: 'rgba(250,250,250,0.97)', padding: '4px 6px', borderRadius: 12, boxShadow: '0 3px 16px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)' }}>
-          <ABtn onClick={e => { e.stopPropagation(); setShowMenu(false); onEdit(); }} hoverBg="#f5f5f5" hoverColor="#555">
-            <Edit2 size={14} color="currentColor" variant="Linear" />
+        <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 20, display: 'flex', gap: 14, alignItems: 'center', paddingRight: 4 }}>
+          <ABtn onClick={e => { e.stopPropagation(); setShowMenu(false); onEdit(); }} hoverBg="transparent" hoverColor="#444">
+            <Edit2 size={18} color="currentColor" variant="Linear" />
           </ABtn>
-          <ABtn onClick={e => { e.stopPropagation(); setShowMenu(false); onSnooze(); }} hoverBg="#fffbeb" hoverColor="#d97706">
-            <Clock size={14} color="currentColor" variant="Linear" />
+          <ABtn onClick={e => { e.stopPropagation(); setShowMenu(false); onSnooze(); }} hoverBg="transparent" hoverColor="#444">
+            <Clock size={18} color="currentColor" variant="Linear" />
           </ABtn>
         </div>
       )}
@@ -798,7 +793,7 @@ function ABtn({ onClick, children, hoverBg, hoverColor }: { onClick: (e: React.M
   const [h, setH] = useState(false);
   return (
     <button onClick={onClick} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid #ebebeb', background: h ? hoverBg : '#fafafa', color: h ? hoverColor : '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' }}>
+      style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: h ? 'rgba(0,0,0,0.06)' : 'transparent', color: h ? hoverColor : '#aaa', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit', padding: 0 }}>
       {children}
     </button>
   );
@@ -833,10 +828,22 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
 }
 
 function CommuteScreen({ visible, onBack, isMobile }: { visible: boolean; onBack: () => void; isMobile: boolean }) {
+  const routeSteps = [
+    { Icon: PersonSimpleWalk, label: 'Walk to Metro Station', sub: 'Approx 400m', duration: '5 min' },
+    { Icon: Train,            label: 'Metro Line 2',          sub: 'Towards Downtown',     duration: '22 min' },
+    { Icon: PersonSimpleWalk, label: 'Walk to Office',        sub: 'From Downtown Station', duration: '5 min' },
+  ];
+
+  const aiSuggestions = [
+    { Icon: Timer,   text: 'Traffic 18% heavier. Leave at 7:35 to stay on time' },
+    { Icon: Train,   text: 'Metro Line 2 delayed. Bus 42 saves 8 mins' },
+    { Icon: Umbrella, text: 'Light rain at 8:00 AM. Pack an umbrella today' },
+  ];
+
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 120,
-      background: '#fafafa',
+      background: '#f0f2f8',
       opacity: visible ? 1 : 0,
       transform: visible ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(24px)',
       transition: 'opacity 0.28s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -846,234 +853,99 @@ function CommuteScreen({ visible, onBack, isMobile }: { visible: boolean; onBack
     }}>
       {/* Header */}
       <div style={{
-        paddingTop: isMobile ? 'max(52px, env(safe-area-inset-top))' : 68,
-        paddingLeft: 20, paddingRight: 20, paddingBottom: 12,
-        background: '#fafafa',
-        display: 'flex', alignItems: 'center', gap: 10,
+        paddingTop: isMobile ? 'max(64px, env(safe-area-inset-top))' : 80,
+        paddingLeft: 20, paddingRight: 20, paddingBottom: 16,
+        background: '#f0f2f8',
+        display: 'flex', alignItems: 'flex-start', gap: 12,
         flexShrink: 0,
-        borderBottom: '1px solid #f0f0f0',
       }}>
         <button onClick={onBack} style={{
-          width: 36, height: 36, borderRadius: 12,
-          background: '#f5f5f5', border: '1px solid #ebebeb',
+          width: 38, height: 38, borderRadius: 12,
+          background: '#eaeaef', border: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', flexShrink: 0,
+          cursor: 'pointer', flexShrink: 0, marginTop: 2,
         }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 12.5L5.5 8 10 3.5" stroke="#0a0a0a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.4px', lineHeight: 1.15 }}>Your Commute</div>
-          <div style={{ fontSize: 12, color: '#aaa', marginTop: 1 }}>Tuesday, April 22 · Leave by 7:40 AM</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.5px', lineHeight: 1.15 }}>Your Path</div>
+          <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>Wed, April 22 · Leave by 7:40 AM</div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#C4B5FD', letterSpacing: '-0.6px', lineHeight: 1 }}>32 min</div>
-          <div style={{ fontSize: 10, color: '#b0b0b0', marginTop: 1 }}>total</div>
+        <div style={{ textAlign: 'right', paddingTop: 2 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.5px', lineHeight: 1 }}>32 mins</div>
+          <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>total</div>
         </div>
       </div>
 
       {/* Map */}
-      <div style={{ position: 'relative', flexShrink: 0, height: 220, overflow: 'hidden' }}>
-        <CommuteMap />
+      <div style={{ padding: '0 16px 4px', flexShrink: 0 }}>
+        <div style={{ position: 'relative', height: 260, overflow: 'hidden', borderRadius: 20 }}>
+          <img
+            src="/mapwithpin.png"
+            alt="route map"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+          />
 
-        {/* Leave by chip */}
-        <div style={{
-          position: 'absolute', bottom: 14, left: 16,
-          background: '#3daa6e', borderRadius: 10, padding: '6px 11px',
-          display: 'flex', alignItems: 'center', gap: 5,
-          boxShadow: '0 2px 8px rgba(61,170,110,0.3)',
-        }}>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <circle cx="5" cy="5" r="4" stroke="#fff" strokeWidth="1.2"/>
-            <path d="M5 3v2.2l1.4 1.4" stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>
-          </svg>
-          <span style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>Leave 7:40 AM</span>
-        </div>
-
-        {/* Arrive badge */}
-        <div style={{
-          position: 'absolute', bottom: 14, right: 16,
-          background: '#fff', borderRadius: 12, padding: '8px 12px',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.13)', border: '1px solid #ebebeb',
-        }}>
-          <div style={{ fontSize: 9, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Arrive</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>8:12 AM</div>
-        </div>
-
-        {/* Metro line label on map */}
-        <div style={{
-          position: 'absolute', top: 90, left: '50%', transform: 'translateX(-50%)',
-          background: 'rgba(75,150,232,0.12)', borderRadius: 6,
-          padding: '3px 8px', backdropFilter: 'blur(4px)',
-        }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: '#C4B5FD', letterSpacing: '0.04em' }}>METRO LINE 2</span>
+          {/* Arrive badge */}
+          <div style={{
+            position: 'absolute', bottom: 14, right: 14,
+            background: '#fff', borderRadius: 14, padding: '8px 14px',
+            boxShadow: '0 2px 14px rgba(0,0,0,0.14)',
+          }}>
+            <div style={{ fontSize: 9, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>ARRIVE</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>8:12 AM</div>
+          </div>
         </div>
       </div>
 
       {/* Scrollable info */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px', paddingBottom: isMobile ? 'max(32px, env(safe-area-inset-bottom))' : 32 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', paddingBottom: isMobile ? 'max(32px, env(safe-area-inset-bottom))' : 32 }}>
 
         {/* Route steps */}
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#c0c0c0', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Route Steps</div>
-        <div style={{ background: '#f5f5f5', borderRadius: 16, overflow: 'hidden', marginBottom: 18 }}>
-          {COMMUTE_DATA.steps.map((step, i) => (
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#b8b8c0', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Route</div>
+        <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 22 }}>
+          {routeSteps.map((step, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: 12,
-              padding: '13px 14px',
-              borderBottom: i < COMMUTE_DATA.steps.length - 1 ? '1px solid #ebebeb' : 'none',
+              padding: '14px 14px',
+              borderBottom: i < routeSteps.length - 1 ? '1.5px dashed #e8e8e8' : 'none',
             }}>
-              {/* Step icon with connector line */}
-              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 11,
-                  background: '#fff', border: '1px solid #e5e5e5',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                }}>
-                  {step.icon}
-                </div>
-                {i < COMMUTE_DATA.steps.length - 1 && (
-                  <div style={{ position: 'absolute', top: 36, width: 1.5, height: 14, background: '#ddd', left: '50%', transform: 'translateX(-50%)' }} />
-                )}
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: '#f5f5f7',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <step.Icon size={20} color="#555" />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: '#0a0a0a' }}>{step.label}</div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{step.sub}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#0a0a0a' }}>{step.label}</div>
+                <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{step.sub}</div>
               </div>
               <div style={{
-                fontSize: 12, fontWeight: 700, color: '#C4B5FD', flexShrink: 0,
-                background: '#ede9fe', padding: '4px 8px', borderRadius: 7,
+                background: '#ede9fe', borderRadius: 20, padding: '4px 12px',
+                fontSize: 12, fontWeight: 600, color: '#8B5CF6', flexShrink: 0,
               }}>{step.duration}</div>
             </div>
           ))}
         </div>
 
-        {/* AI suggestions */}
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#c0c0c0', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>AI Suggestions</div>
-        {COMMUTE_DATA.aiSuggestions.map((s, i) => {
-          const SuggIcon: Icon | null = NUDGE_ICON_MAP[s.iconName] ?? null;
-          return (
-            <div key={i} style={{
-              background: '#f0ecff', borderRadius: 12, padding: '11px 13px', marginBottom: 8,
-              display: 'flex', gap: 9, alignItems: 'flex-start', border: '1px solid #e4deff',
-            }}>
-              {SuggIcon && <SuggIcon size={14} color="#7c6ee0" variant="Bulk" style={{ marginTop: 1, flexShrink: 0 }} />}
-              <span style={{ fontSize: 12, color: '#5a4a8a', lineHeight: 1.5, flex: 1 }}>{s.text}</span>
-              <span style={{
-                fontSize: 9, fontWeight: 700, color: '#8b72e0', flexShrink: 0,
-                background: '#e4deff', padding: '3px 7px', borderRadius: 5, marginTop: 1,
-              }}>{s.tag}</span>
-            </div>
-          );
-        })}
+        {/* AI Suggestions */}
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#b8b8c0', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>AI Suggestions</div>
+        {aiSuggestions.map((s, i) => (
+          <div key={i} style={{
+            background: '#b4a5f8',
+            borderRadius: 8, padding: '11px 14px', marginBottom: 10,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <s.Icon size={17} color="#1a0a5e" weight="regular" />
+            <span style={{ fontSize: 12, color: '#1a0a5e', lineHeight: 1.4, flex: 1, fontWeight: 500 }}>{s.text}</span>
+          </div>
+        ))}
 
       </div>
     </div>
-  );
-}
-
-function CommuteMap() {
-  return (
-    <svg
-      width="100%" height="220"
-      viewBox="0 0 390 220"
-      preserveAspectRatio="xMidYMid slice"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Map background */}
-      <rect width="390" height="220" fill="#e9eef3" />
-
-      {/* Subtle block fills between streets */}
-      <rect x="0" y="0" width="55" height="37" fill="#dfe5eb" opacity="0.6" />
-      <rect x="65" y="0" width="70" height="37" fill="#e2e8ed" opacity="0.5" />
-      <rect x="145" y="0" width="60" height="37" fill="#dfe5eb" opacity="0.45" />
-      <rect x="215" y="0" width="70" height="37" fill="#e2e8ed" opacity="0.5" />
-      <rect x="295" y="0" width="40" height="37" fill="#dfe5eb" opacity="0.4" />
-      <rect x="0" y="43" width="55" height="53" fill="#e2e8ed" opacity="0.5" />
-      <rect x="65" y="43" width="70" height="53" fill="#dfe5eb" opacity="0.45" />
-      <rect x="145" y="43" width="60" height="53" fill="#e2e8ed" opacity="0.5" />
-      <rect x="215" y="43" width="70" height="53" fill="#dfe5eb" opacity="0.45" />
-      <rect x="295" y="43" width="40" height="53" fill="#e2e8ed" opacity="0.4" />
-      <rect x="345" y="43" width="45" height="53" fill="#dfe5eb" opacity="0.4" />
-      <rect x="0" y="102" width="55" height="53" fill="#dfe5eb" opacity="0.45" />
-      <rect x="65" y="102" width="70" height="53" fill="#e2e8ed" opacity="0.5" />
-      <rect x="145" y="102" width="60" height="53" fill="#dfe5eb" opacity="0.4" />
-      <rect x="215" y="102" width="70" height="53" fill="#e2e8ed" opacity="0.45" />
-      <rect x="295" y="102" width="40" height="53" fill="#dfe5eb" opacity="0.4" />
-      <rect x="345" y="102" width="45" height="53" fill="#e2e8ed" opacity="0.35" />
-      <rect x="0" y="161" width="55" height="59" fill="#e2e8ed" opacity="0.5" />
-      <rect x="65" y="161" width="70" height="59" fill="#dfe5eb" opacity="0.45" />
-      <rect x="145" y="161" width="60" height="59" fill="#e2e8ed" opacity="0.4" />
-      <rect x="215" y="161" width="70" height="59" fill="#dfe5eb" opacity="0.4" />
-
-      {/* Horizontal roads */}
-      <line x1="0" y1="40" x2="390" y2="40" stroke="#fff" strokeWidth="9"/>
-      <line x1="0" y1="100" x2="390" y2="100" stroke="#fff" strokeWidth="7"/>
-      <line x1="0" y1="160" x2="390" y2="160" stroke="#fff" strokeWidth="9"/>
-
-      {/* Vertical roads */}
-      <line x1="60" y1="0" x2="60" y2="220" stroke="#fff" strokeWidth="9"/>
-      <line x1="140" y1="0" x2="140" y2="220" stroke="#fff" strokeWidth="7"/>
-      <line x1="215" y1="0" x2="215" y2="220" stroke="#fff" strokeWidth="9"/>
-      <line x1="295" y1="0" x2="295" y2="220" stroke="#fff" strokeWidth="7"/>
-      <line x1="345" y1="0" x2="345" y2="220" stroke="#fff" strokeWidth="5"/>
-
-      {/* Road centre lines (dashed) */}
-      <line x1="0" y1="40" x2="390" y2="40" stroke="#e0e6eb" strokeWidth="1" strokeDasharray="6 5"/>
-      <line x1="0" y1="100" x2="390" y2="100" stroke="#e0e6eb" strokeWidth="1" strokeDasharray="6 5"/>
-      <line x1="0" y1="160" x2="390" y2="160" stroke="#e0e6eb" strokeWidth="1" strokeDasharray="6 5"/>
-
-      {/* Street name labels */}
-      <text x="195" y="36" textAnchor="middle" fontSize="7" fill="#c0c8d0" fontFamily="system-ui,sans-serif">CENTRAL AVE</text>
-      <text x="195" y="96" textAnchor="middle" fontSize="7" fill="#c0c8d0" fontFamily="system-ui,sans-serif">MAIN STREET</text>
-      <text x="195" y="156" textAnchor="middle" fontSize="7" fill="#c0c8d0" fontFamily="system-ui,sans-serif">PARK ROAD</text>
-
-      {/* Route glow (drawn first, underneath) */}
-      <path d="M50 195 L60 160" stroke="#C4B5FD" strokeWidth="12" strokeLinecap="round" opacity="0.1"/>
-      <path d="M60 160 C95 152 120 85 215 78 C258 74 282 46 320 38" stroke="#C4B5FD" strokeWidth="12" strokeLinecap="round" fill="none" opacity="0.1"/>
-      <path d="M320 38 L345 28" stroke="#C4B5FD" strokeWidth="12" strokeLinecap="round" opacity="0.1"/>
-
-      {/* Walk segment: home → metro station */}
-      <path d="M50 195 L60 160" stroke="#C4B5FD" strokeWidth="2.5" strokeDasharray="4.5 3" strokeLinecap="round"/>
-      {/* Metro route */}
-      <path d="M60 160 C95 152 120 85 215 78 C258 74 282 46 320 38" stroke="#C4B5FD" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
-      {/* Walk segment: metro → office */}
-      <path d="M320 38 L345 28" stroke="#C4B5FD" strokeWidth="2.5" strokeDasharray="4.5 3" strokeLinecap="round"/>
-
-      {/* Home marker */}
-      <circle cx="50" cy="195" r="13" fill="#fff" opacity="0.9"/>
-      <circle cx="50" cy="195" r="8" fill="#3daa6e"/>
-      <circle cx="50" cy="195" r="16" stroke="#3daa6e" strokeWidth="2" fill="none" opacity="0.22"/>
-      {/* Home icon dot */}
-      <circle cx="50" cy="193" r="2.5" fill="#fff"/>
-
-      {/* Metro station A (boarding) */}
-      <circle cx="60" cy="160" r="7" fill="#fff"/>
-      <circle cx="60" cy="160" r="4.5" fill="#C4B5FD"/>
-      <circle cx="60" cy="160" r="9" stroke="#C4B5FD" strokeWidth="1.5" fill="none" opacity="0.3"/>
-
-      {/* Metro mid-stop */}
-      <circle cx="215" cy="78" r="5" fill="#fff"/>
-      <circle cx="215" cy="78" r="3" fill="#C4B5FD"/>
-
-      {/* Metro station B (alighting) */}
-      <circle cx="320" cy="38" r="7" fill="#fff"/>
-      <circle cx="320" cy="38" r="4.5" fill="#C4B5FD"/>
-      <circle cx="320" cy="38" r="9" stroke="#C4B5FD" strokeWidth="1.5" fill="none" opacity="0.3"/>
-
-      {/* Office pin */}
-      <path d="M345 12 C340.5 12 337 15.5 337 20 C337 25.5 345 34 345 34 C345 34 353 25.5 353 20 C353 15.5 349.5 12 345 12Z" fill="#0a0a0a"/>
-      <circle cx="345" cy="20" r="3.5" fill="#fff"/>
-
-      {/* Labels */}
-      <text x="50" y="213" textAnchor="middle" fontSize="8.5" fill="#3daa6e" fontWeight="700" fontFamily="system-ui,sans-serif">HOME</text>
-      <text x="345" y="46" textAnchor="middle" fontSize="8.5" fill="#0a0a0a" fontWeight="700" fontFamily="system-ui,sans-serif">OFFICE</text>
-
-      {/* Station labels */}
-      <text x="75" y="155" fontSize="7.5" fill="#C4B5FD" fontWeight="600" fontFamily="system-ui,sans-serif">Park St.</text>
-      <text x="313" y="32" fontSize="7.5" fill="#C4B5FD" fontWeight="600" fontFamily="system-ui,sans-serif" textAnchor="end">Downtown</text>
-    </svg>
   );
 }
 
