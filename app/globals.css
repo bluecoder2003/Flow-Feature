@@ -47,3 +47,16 @@
   100% { box-shadow: 0 0 0 0 rgba(139,114,224,0); }
 }
 .mic-listening { animation: mic-pulse 1.5s ease-out infinite; }
+
+/* Lock screen notification animations */
+@keyframes notifSlideDown {
+  from { opacity: 0; transform: translateY(-60px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes lockFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.notif-slide-1 { animation: notifSlideDown 0.52s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both; }
+.notif-slide-2 { animation: notifSlideDown 0.52s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both; }
+.lock-fade-in  { animation: lockFadeIn 0.35s ease both; }

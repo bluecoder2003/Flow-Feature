@@ -142,6 +142,7 @@ export default function FlowApp() {
   const [nudgeFading, setNudgeFading]     = useState(false);
   const [downloadState, setDownloadState] = useState<'idle' | 'loading' | 'done'>('idle');
   const [isMobile, setIsMobile]           = useState(false);
+  const [showLockScreen, setShowLockScreen] = useState(false);
 
   const toastTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceTimer  = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -287,7 +288,7 @@ export default function FlowApp() {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowNotif(false); closeAddModal(); setShowEdit(false);
-        setShowReport(false); setShowCommute(false);
+        setShowReport(false); setShowCommute(false); setShowLockScreen(false);
       }
       if (e.key === 'Enter' && showAdd) addTask();
       if (e.key === 'Enter' && showEdit) saveEdit();
@@ -593,6 +594,9 @@ export default function FlowApp() {
       <div style={{ position: 'absolute', bottom: 100, left: '50%', transform: `translateX(-50%) translateY(${toastVisible ? 0 : 12}px)`, background: '#0a0a0a', color: '#fff', borderRadius: 20, padding: '8px 16px', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', opacity: toastVisible ? 1 : 0, transition: 'all 0.3s ease', zIndex: 300, pointerEvents: 'none' }}>{toast}</div>
 
       {!isMobile && <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 120, height: 5, background: 'rgba(0,0,0,0.15)', borderRadius: 3 }} />}
+
+      {/* Lock screen overlay — rendered inside phone frame */}
+      {!isMobile && <LockScreenOverlay visible={showLockScreen} onClose={() => setShowLockScreen(false)} />}
     </>
   );
 
@@ -605,7 +609,7 @@ export default function FlowApp() {
   }
 
   return (
-    <div style={{ fontFamily: 'var(--font-dm-sans, system-ui)', background: '#ebebeb', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+    <div style={{ fontFamily: 'var(--font-dm-sans, system-ui)', background: '#ebebeb', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{ width: 390, height: 844, background: '#1a1a1a', borderRadius: 54, position: 'relative', boxShadow: '0 0 0 1px #2a2a2a, 0 0 0 2px #0a0a0a, 0 40px 80px rgba(0,0,0,.35), 0 20px 40px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08)', overflow: 'hidden', flexShrink: 0 }}>
         <div style={{ position: 'absolute', left: -3, top: 140, width: 4, height: 36, background: '#2a2a2a', borderRadius: '2px 0 0 2px', boxShadow: '0 52px 0 #2a2a2a, 0 100px 0 #2a2a2a' }} />
         <div style={{ position: 'absolute', right: -3, top: 180, width: 4, height: 68, background: '#2a2a2a', borderRadius: '0 2px 2px 0' }} />
@@ -623,6 +627,38 @@ export default function FlowApp() {
           {appContent}
         </div>
       </div>
+
+      {/* View Notifications button — web only */}
+      <button
+        onClick={() => setShowLockScreen(true)}
+        style={{
+          marginTop: 28,
+          background: '#fff',
+          border: '1px solid #d8d8d8',
+          borderRadius: 24,
+          padding: '11px 26px',
+          fontSize: 14,
+          fontWeight: 600,
+          color: '#222',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-dm-sans, system-ui)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 9,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+          letterSpacing: '-0.2px',
+          transition: 'box-shadow 0.18s ease, transform 0.18s ease',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 18px rgba(0,0,0,0.14)'; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 10px rgba(0,0,0,0.08)'; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; }}
+      >
+        <svg width="16" height="17" viewBox="0 0 16 17" fill="none">
+          <path d="M8 1.5C5.79 1.5 4 3.24 4 5.38v3.75L2.5 11h11L12 9.13V5.38C12 3.24 10.21 1.5 8 1.5z" stroke="#222" strokeWidth="1.45" strokeLinejoin="round" fill="none"/>
+          <path d="M6.5 11.5a1.5 1.5 0 003 0" stroke="#222" strokeWidth="1.45" strokeLinecap="round"/>
+        </svg>
+        View Notifications
+      </button>
+
     </div>
   );
 }
@@ -1048,5 +1084,253 @@ function StatusIcons() {
       <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 10a1 1 0 110 2 1 1 0 010-2z" fill="#0a0a0a"/><path d="M5.17 7.83a4 4 0 015.66 0" stroke="#0a0a0a" strokeWidth="1.4" strokeLinecap="round"/><path d="M2.34 5a8 8 0 0111.32 0" stroke="#0a0a0a" strokeWidth="1.4" strokeLinecap="round"/></svg>
       <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="#0a0a0a"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#0a0a0a"/><path d="M23 4.5v3a1.5 1.5 0 000-3z" fill="#0a0a0a"/></svg>
     </>
+  );
+}
+
+// ─── Lock Screen Overlay ──────────────────────────────────────────────────────
+
+function LockScreenOverlay({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const startY = useRef(0);
+  const [swipeY, setSwipeY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Reset swipe when closed
+  useEffect(() => { if (!visible) setSwipeY(0); }, [visible]);
+
+  const handlePtrDown = (e: React.PointerEvent) => {
+    startY.current = e.clientY;
+    setIsDragging(true);
+  };
+  const handlePtrMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const dy = e.clientY - startY.current;
+    if (dy < 0) setSwipeY(Math.max(dy, -180));
+  };
+  const handlePtrUp = () => {
+    setIsDragging(false);
+    if (swipeY < -80) { onClose(); } else { setSwipeY(0); }
+  };
+
+  const swipeProgress = Math.min(Math.abs(swipeY) / 180, 1);
+
+  return (
+    <div
+      style={{
+        position: 'absolute', inset: 0, zIndex: 9999,
+        opacity: visible ? 1 - swipeProgress * 0.4 : 0,
+        pointerEvents: visible ? 'all' : 'none',
+        transform: swipeY !== 0 ? `translateY(${swipeY * 0.6}px)` : 'translateY(0)',
+        transition: isDragging ? 'none' : 'opacity 0.35s ease, transform 0.5s cubic-bezier(0.16,1,0.3,1)',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
+        userSelect: 'none',
+      }}
+      onPointerDown={handlePtrDown}
+      onPointerMove={handlePtrMove}
+      onPointerUp={handlePtrUp}
+      onPointerCancel={handlePtrUp}
+      onClick={onClose}
+    >
+      {/* Wallpaper */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'url(/wallpaper.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+      }} />
+
+      {/* Status bar */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '16px 26px 0',
+      }}>
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#fff', letterSpacing: '-0.3px' }}>9:41</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          {/* Signal */}
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="none">
+            <rect x="0" y="7" width="3" height="5" rx="1" fill="white"/>
+            <rect x="4.5" y="5" width="3" height="7" rx="1" fill="white"/>
+            <rect x="9" y="2.5" width="3" height="9.5" rx="1" fill="white"/>
+            <rect x="13.5" y="0" width="3" height="12" rx="1" fill="white"/>
+          </svg>
+          {/* WiFi */}
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+            <path d="M8 10a1 1 0 110 2 1 1 0 010-2z" fill="white"/>
+            <path d="M5.17 7.83a4 4 0 015.66 0" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+            <path d="M2.34 5a8 8 0 0111.32 0" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          {/* Battery */}
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="white"/>
+            <rect x="2" y="2" width="16" height="8" rx="2" fill="white"/>
+            <path d="M23 4.5v3a1.5 1.5 0 000-3z" fill="white"/>
+          </svg>
+        </div>
+      </div>
+
+      {/* Lock icon */}
+      <div style={{
+        position: 'absolute', top: 60, left: 0, right: 0,
+        display: 'flex', justifyContent: 'center',
+      }}>
+        <svg width="30" height="36" viewBox="0 0 30 36" fill="none">
+          <rect x="3" y="16" width="24" height="18" rx="5" stroke="white" strokeWidth="2" fill="rgba(255,255,255,0.12)"/>
+          <path d="M8 16V11C8 7.69 11.13 5 15 5C18.87 5 22 7.69 22 11" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/>
+          <circle cx="15" cy="25" r="2.5" stroke="white" strokeWidth="1.5" fill="rgba(255,255,255,0.25)"/>
+        </svg>
+      </div>
+
+      {/* Time */}
+      <div style={{
+        position: 'absolute', top: 104, left: 0, right: 0,
+        textAlign: 'center',
+        fontSize: 86,
+        fontWeight: 300,
+        color: '#fff',
+        letterSpacing: -4,
+        lineHeight: 1,
+      }}>6:41</div>
+
+      {/* Date */}
+      <div style={{
+        position: 'absolute', top: 204, left: 0, right: 0,
+        textAlign: 'center',
+        fontSize: 19,
+        fontWeight: 400,
+        color: 'rgba(255,255,255,0.92)',
+        letterSpacing: '0.1px',
+      }}>Wednesday, 22 April</div>
+
+      {/* Notifications */}
+      <div
+        style={{ position: 'absolute', top: 270, left: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 10 }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Notification 1 — Traffic */}
+        <div
+          className={visible ? 'notif-slide-1' : ''}
+          style={{
+            background: 'rgba(242,238,255,0.84)',
+            backdropFilter: 'blur(22px)',
+            WebkitBackdropFilter: 'blur(22px)',
+            borderRadius: 18,
+            padding: '13px 14px 12px',
+            border: '1px solid rgba(255,255,255,0.35)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/pink.png" alt="" style={{ width: 42, height: 42, borderRadius: 11, flexShrink: 0, objectFit: 'cover' }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#111', lineHeight: 1.25 }}>Traffic is heavier today</span>
+                <span style={{ fontSize: 12, color: '#999', flexShrink: 0, marginTop: 1 }}>2m ago</span>
+              </div>
+              <div style={{ fontSize: 14, color: '#333', marginTop: 2, lineHeight: 1.35 }}>Leave at 7:35 to stay on time</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 9, marginTop: 11 }}>
+            {(['Leave now', '10 min later'] as const).map(label => (
+              <button
+                key={label}
+                style={{
+                  flex: 1,
+                  background: 'rgba(255,255,255,0.88)',
+                  border: '1px solid rgba(0,0,0,0.13)',
+                  borderRadius: 22,
+                  padding: '7px 12px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#111',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >{label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Notification 2 — Message */}
+        <div
+          className={visible ? 'notif-slide-2' : ''}
+          style={{
+            background: 'rgba(242,238,255,0.84)',
+            backdropFilter: 'blur(22px)',
+            WebkitBackdropFilter: 'blur(22px)',
+            borderRadius: 18,
+            padding: '13px 14px',
+            border: '1px solid rgba(255,255,255,0.35)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/photo.png" alt="" style={{ width: 42, height: 42, borderRadius: 11, flexShrink: 0, objectFit: 'cover' }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#111', lineHeight: 1.25 }}>What&apos;s the occasion?</span>
+                <span style={{ fontSize: 12, color: '#999', flexShrink: 0, marginTop: 1 }}>3m ago</span>
+              </div>
+              <div style={{ fontSize: 14, color: '#333', marginTop: 2, lineHeight: 1.35 }}>Can you bring a big salad? I&apos;m on dessert duty.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom controls */}
+      <div style={{
+        position: 'absolute', bottom: 52, left: 0, right: 0,
+        display: 'flex', justifyContent: 'space-between',
+        padding: '0 52px',
+      }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Flashlight */}
+        <div style={{
+          width: 54, height: 54, borderRadius: '50%',
+          background: 'rgba(110,110,120,0.52)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: '1px solid rgba(255,255,255,0.12)',
+        }}>
+          <svg width="22" height="24" viewBox="0 0 22 24" fill="none">
+            <path d="M7 4h8l1.5 7-5.5 4-5.5-4L7 4z" stroke="white" strokeWidth="1.6" strokeLinejoin="round"/>
+            <rect x="7" y="15" width="8" height="8" rx="2.5" stroke="white" strokeWidth="1.6"/>
+            <line x1="11" y1="17.5" x2="11" y2="20.5" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+        </div>
+        {/* Camera */}
+        <div style={{
+          width: 54, height: 54, borderRadius: '50%',
+          background: 'rgba(110,110,120,0.52)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: '1px solid rgba(255,255,255,0.12)',
+        }}>
+          <svg width="24" height="22" viewBox="0 0 24 22" fill="none">
+            <rect x="2" y="6" width="20" height="15" rx="4" stroke="white" strokeWidth="1.6"/>
+            <circle cx="12" cy="13.5" r="4" stroke="white" strokeWidth="1.6"/>
+            <path d="M8 6l1.2-2.5h5.6L16 6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="18.5" cy="9.5" r="1" fill="white"/>
+          </svg>
+        </div>
+      </div>
+
+      {/* Home indicator */}
+      <div style={{
+        position: 'absolute', bottom: 14, left: 0, right: 0,
+        display: 'flex', justifyContent: 'center',
+      }}>
+        <div style={{ width: 130, height: 5, background: 'rgba(255,255,255,0.82)', borderRadius: 3 }} />
+      </div>
+
+      {/* Swipe-up hint */}
+      <div style={{
+        position: 'absolute', bottom: 120, left: 0, right: 0,
+        textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.42)',
+        letterSpacing: '0.02em',
+      }}>Swipe up or tap to close</div>
+    </div>
   );
 }
