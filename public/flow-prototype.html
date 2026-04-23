@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow — AI Routine Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #efefef;
+  --text-primary: #0a0a0a;
+  --text-secondary: #888888;
+  --text-muted: #bbbbbb;
+  --accent: #e63329;
+  --accent-light: #fff0ef;
+  --blue-bg: #eaf4ff;
+  --blue-dot: #3b82f6;
+  --green-bg: #edfaf3;
+  --green-dot: #22c55e;
+  --purple-bg: #f5f0ff;
+  --purple-dot: #a855f7;
+  --yellow-bg: #fffbeb;
+  --yellow-dot: #f59e0b;
+  --border: #e8e8e8;
+  --border-dashed: #e0e0e0;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+  --radius: 16px;
+  --font: 'DM Sans', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: #f0f0f0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  user-select: none;
+}
+
+/* ─── Presentation wrapper ─── */
+.scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.scene-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #999;
+}
+
+/* ─── Phone frame ─── */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: #1a1a1a;
+  border-radius: 54px;
+  position: relative;
+  box-shadow:
+    0 0 0 1px #2a2a2a,
+    0 0 0 2px #0a0a0a,
+    0 40px 80px rgba(0,0,0,0.35),
+    0 20px 40px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+/* Side buttons */
+.phone::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 140px;
+  width: 4px;
+  height: 36px;
+  background: #2a2a2a;
+  border-radius: 2px 0 0 2px;
+  box-shadow: 0 52px 0 #2a2a2a, 0 100px 0 #2a2a2a;
+}
+.phone::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 180px;
+  width: 4px;
+  height: 68px;
+  background: #2a2a2a;
+  border-radius: 0 2px 2px 0;
+}
+
+.phone-screen {
+  position: absolute;
+  inset: 6px;
+  border-radius: 48px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ─── Dynamic Island ─── */
+.dynamic-island {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 126px;
+  height: 37px;
+  background: #0a0a0a;
+  border-radius: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.di-camera {
+  width: 11px;
+  height: 11px;
+  background: #1c1c1c;
+  border-radius: 50%;
+  border: 2px solid #2a2a2a;
+}
+.di-dot {
+  width: 7px;
+  height: 7px;
+  background: #1a1a1a;
+  border-radius: 50%;
+}
+
+/* ─── Status bar ─── */
+.status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 28px 8px;
+  justify-content: space-between;
+  z-index: 99;
+  background: var(--bg);
+}
+.status-time {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-icons svg { display: block; }
+
+/* ─── Main screen ─── */
+.app-screen {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-top: 60px;
+  padding-bottom: 100px;
+  background: var(--bg);
+  transition: opacity 0.3s ease;
+}
+.app-screen::-webkit-scrollbar { display: none; }
+
+/* ─── Header ─── */
+.app-header {
+  padding: 12px 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.day-name {
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -2px;
+}
+.day-dot {
+  color: var(--accent);
+  font-size: 56px;
+  line-height: 1;
+}
+.date-block {
+  text-align: right;
+  padding-top: 6px;
+}
+.date-month {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+.date-year {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* ─── AI summary strip ─── */
+.ai-strip {
+  margin: 14px 24px 0;
+  background: #f8f8f8;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--border);
+}
+.ai-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ai-spark {
+  font-size: 13px;
+}
+.ai-message {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: -0.1px;
+}
+.weather-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 9px;
+}
+
+/* ─── Calendar strip ─── */
+.cal-strip {
+  margin: 16px 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 40px;
+  cursor: pointer;
+}
+.cal-day-abbr {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cal-day-num {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+.cal-day.today .cal-day-abbr { color: var(--accent); font-weight: 600; }
+.cal-day.today .cal-day-num {
+  background: var(--text-primary);
+  color: white;
+  font-weight: 600;
+}
+.cal-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.cal-day.has-items .cal-dot { background: var(--accent); }
+
+/* ─── Divider ─── */
+.divider {
+  margin: 16px 24px 0;
+  border: none;
+  border-top: 1px dashed var(--border-dashed);
+}
+
+/* ─── Tabs ─── */
+.tabs {
+  display: flex;
+  padding: 12px 24px 0;
+  gap: 0;
+}
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 8px 0;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+.tab-btn.active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+.tab-btn.active::after { background: var(--text-primary); }
+
+/* ─── Tab content ─── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── Reminder / Event items ─── */
+.item-list {
+  padding: 0 24px;
+  margin-top: 4px;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--border-dashed);
+  position: relative;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  cursor: pointer;
+}
+.list-item:last-child { border-bottom: none; }
+
+.item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.icon-yellow { background: var(--yellow-bg); }
+.icon-blue { background: var(--blue-bg); }
+.icon-green { background: var(--green-bg); }
+.icon-purple { background: var(--purple-bg); }
+.icon-red { background: var(--accent-light); }
+.icon-gray { background: var(--bg-secondary); }
+
+.item-body { flex: 1; min-width: 0; }
+.item-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+  transition: all 0.2s;
+}
+.item-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.item-time {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.item-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.list-item:hover .item-actions,
+.list-item.show-actions .item-actions { opacity: 1; }
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-secondary);
+}
+.action-btn:hover { background: var(--bg-secondary); border-color: #ccc; }
+.action-btn.done-btn:hover { background: var(--green-bg); border-color: var(--green-dot); color: var(--green-dot); }
+.action-btn.snooze-btn:hover { background: var(--yellow-bg); border-color: var(--yellow-dot); color: var(--yellow-dot); }
+.action-btn.del-btn:hover { background: #fff0ef; border-color: var(--accent); color: var(--accent); }
+
+/* Done state */
+.list-item.done .item-title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+.list-item.done .item-icon { opacity: 0.4; }
+
+/* Snoozed state */
+.snooze-badge {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--yellow-bg);
+  color: #b45309;
+  border-radius: 6px;
+  padding: 2px 6px;
+  margin-left: 4px;
+}
+
+/* Category badge for events */
+.cat-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 6px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.cat-commute { background: var(--blue-bg); color: #1d4ed8; }
+.cat-meeting { background: var(--purple-bg); color: #7c3aed; }
+.cat-personal { background: var(--green-bg); color: #15803d; }
+.cat-health { background: var(--accent-light); color: #be123c; }
+
+/* ─── Section header ─── */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 14px 24px 0;
+}
+
+/* ─── Bottom bar ─── */
+.bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px 24px;
+  z-index: 50;
+}
+.nav-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--bg-secondary);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.nav-icon-btn:hover { background: var(--bg-tertiary); }
+.nav-icon-btn.active {
+  background: var(--text-primary);
+  color: white;
+}
+
+.fab {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: var(--text-primary);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transition: all 0.15s;
+  color: white;
+}
+.fab:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+.fab:active { transform: scale(0.97); }
+
+/* ─── Lock screen notification overlay ─── */
+.notif-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  background: linear-gradient(160deg, #1c2331 0%, #0f1623 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 60px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.notif-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Lock screen time */
+.lock-time {
+  font-size: 72px;
+  font-weight: 300;
+  color: white;
+  line-height: 1;
+  letter-spacing: -3px;
+  margin-top: 20px;
+}
+.lock-date {
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.65);
+  margin-top: 6px;
+  letter-spacing: 0.01em;
+}
+
+/* Notification card */
+.notif-card {
+  width: calc(100% - 32px);
+  margin: 32px 0 0;
+  background: rgba(255,255,255,0.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 14px 16px;
+  transform: translateY(8px);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.notif-overlay.visible .notif-card {
+  transform: translateY(0);
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.notif-app-icon {
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+.notif-app-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+.notif-time-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  font-weight: 400;
+}
+
+.notif-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+.notif-body {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.notif-actions {
+  display: flex;
+  gap: 8px;
+}
+.notif-action-btn {
+  flex: 1;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: white;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.notif-action-btn:hover { background: rgba(255,255,255,0.22); }
+.notif-action-btn.primary-action {
+  background: rgba(255,255,255,0.9);
+  color: #0a0a0a;
+  border-color: transparent;
+}
+.notif-action-btn.primary-action:hover { background: white; }
+
+/* Swipe hint on notif */
+.lock-swipe-hint {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  font-weight: 400;
+}
+
+/* ─── Voice overlay ─── */
+.voice-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 100px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.voice-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.voice-card {
+  width: calc(100% - 32px);
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 20px 20px 16px;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(16px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.voice-overlay.visible .voice-card {
+  transform: translateY(0);
+}
+.voice-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+.voice-waveform {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+.wave-bar {
+  width: 3px;
+  background: var(--text-primary);
+  border-radius: 2px;
+  animation: wave 0.8s ease-in-out infinite alternate;
+}
+.wave-bar:nth-child(1) { height: 12px; animation-delay: 0s; }
+.wave-bar:nth-child(2) { height: 22px; animation-delay: 0.1s; }
+.wave-bar:nth-child(3) { height: 30px; animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { height: 36px; animation-delay: 0.15s; }
+.wave-bar:nth-child(5) { height: 30px; animation-delay: 0.25s; }
+.wave-bar:nth-child(6) { height: 22px; animation-delay: 0.05s; }
+.wave-bar:nth-child(7) { height: 14px; animation-delay: 0.3s; }
+.wave-bar:nth-child(8) { height: 26px; animation-delay: 0.18s; }
+.wave-bar:nth-child(9) { height: 32px; animation-delay: 0.08s; }
+.wave-bar:nth-child(10) { height: 18px; animation-delay: 0.22s; }
+
+@keyframes wave {
+  from { transform: scaleY(1); opacity: 0.7; }
+  to { transform: scaleY(1.5); opacity: 1; }
+}
+
+.voice-transcript {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: center;
+  min-height: 22px;
+  margin-bottom: 12px;
+}
+.voice-transcript .cursor {
+  display: inline-block;
+  width: 2px;
+  height: 15px;
+  background: var(--accent);
+  margin-left: 2px;
+  border-radius: 1px;
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.voice-cancel {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: none;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.voice-cancel:hover { background: var(--bg-tertiary); }
+
+/* ─── Add task modal ─── */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.modal-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal-sheet {
+  background: var(--bg);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px 32px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.modal-overlay.visible .modal-sheet {
+  transform: translateY(0);
+}
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 18px;
+}
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  letter-spacing: -0.4px;
+}
+.modal-input {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  color: var(--text-primary);
+  outline: none;
+  margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+.modal-input:focus { border-color: var(--text-primary); background: var(--bg); }
+.modal-input::placeholder { color: var(--text-muted); }
+.modal-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.modal-type-btn {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 8px 0;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.modal-type-btn.selected {
+  background: var(--text-primary);
+  color: white;
+  border-color: var(--text-primary);
+}
+.modal-add-btn {
+  width: 100%;
+  background: var(--text-primary);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  letter-spacing: -0.2px;
+}
+.modal-add-btn:hover { opacity: 0.88; }
+
+/* ─── Edit modal ─── */
+.edit-modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 160;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.edit-modal-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.edit-modal-sheet {
+  background: var(--bg);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px 32px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.edit-modal-overlay.visible .edit-modal-sheet {
+  transform: translateY(0);
+}
+
+/* ─── Toast ─── */
+.toast {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--text-primary);
+  color: white;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 300;
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ─── Control panel (outside phone) ─── */
+.controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 420px;
+}
+.ctrl-btn {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.ctrl-btn:hover { background: #f8f8f8; border-color: #bbb; }
+.ctrl-btn.danger { border-color: #fca5a5; color: #dc2626; }
+.ctrl-btn.danger:hover { background: #fff0ef; }
+
+/* ─── Empty state ─── */
+.empty-state {
+  text-align: center;
+  padding: 32px 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ─── Fade out animation for deleted items ─── */
+@keyframes fadeSlide {
+  to { opacity: 0; transform: translateX(40px); max-height: 0; padding: 0; margin: 0; }
+}
+.list-item.deleting {
+  animation: fadeSlide 0.3s ease forwards;
+}
+
+/* ─── Home indicator ─── */
+.home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 5px;
+  background: rgba(0,0,0,0.18);
+  border-radius: 3px;
+}
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#999;">Flow — AI Routine Assistant</div>
+
+  <!-- ══════════════ PHONE ══════════════ -->
+  <div class="phone">
+    <div class="phone-screen">
+
+      <!-- Dynamic Island -->
+      <div class="dynamic-island">
+        <div class="di-dot"></div>
+        <div class="di-camera"></div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+          <!-- Signal -->
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="none">
+            <rect x="0" y="7" width="3" height="5" rx="1" fill="#0a0a0a"/>
+            <rect x="4.5" y="5" width="3" height="7" rx="1" fill="#0a0a0a"/>
+            <rect x="9" y="2.5" width="3" height="9.5" rx="1" fill="#0a0a0a"/>
+            <rect x="13.5" y="0" width="3" height="12" rx="1" fill="#0a0a0a"/>
+          </svg>
+          <!-- WiFi -->
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+            <path d="M8 10a1 1 0 110 2 1 1 0 010-2z" fill="#0a0a0a"/>
+            <path d="M5.17 7.83a4 4 0 015.66 0" stroke="#0a0a0a" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+            <path d="M2.34 5a8 8 0 0111.32 0" stroke="#0a0a0a" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+          </svg>
+          <!-- Battery -->
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+            <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="#0a0a0a" stroke-width="1"/>
+            <rect x="2" y="2" width="16" height="8" rx="2" fill="#0a0a0a"/>
+            <path d="M23 4.5v3a1.5 1.5 0 000-3z" fill="#0a0a0a"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ── App Screen ── -->
+      <div class="app-screen" id="appScreen">
+        <!-- Header -->
+        <div class="app-header">
+          <div style="display:flex;align-items:baseline;gap:2px;">
+            <span class="day-name">Tue</span><span class="day-dot">•</span>
+          </div>
+          <div class="date-block">
+            <div class="date-month">April 22</div>
+            <div class="date-year">2026</div>
+          </div>
+        </div>
+
+        <!-- AI summary -->
+        <div class="ai-strip">
+          <div class="ai-text">
+            <span class="ai-spark">✦</span>
+            <span class="ai-message">You're on track. Leave at 7:40 AM</span>
+          </div>
+          <div class="weather-pill">
+            <span>🌧</span>
+            <span>18°</span>
+          </div>
+        </div>
+
+        <!-- Calendar strip -->
+        <div class="cal-strip">
+          <div class="cal-day" onclick="selectDay(this)">
+            <span class="cal-day-abbr">Mon</span>
+            <span class="cal-day-num">21</span>
+            <div class="cal-dot"></div>
+          </div>
+          <div class="cal-day today has-items" onclick="selectDay(this)">
+            <span class="cal-day-abbr">Tue</span>
+            <span class="cal-day-num">22</span>
+            <div class="cal-dot"></div>
+          </div>
+          <div class="cal-day has-items" onclick="selectDay(this)">
+            <span class="cal-day-abbr">Wed</span>
+            <span class="cal-day-num">23</span>
+            <div class="cal-dot"></div>
+          </div>
+          <div class="cal-day" onclick="selectDay(this)">
+            <span class="cal-day-abbr">Thu</span>
+            <span class="cal-day-num">24</span>
+            <div class="cal-dot"></div>
+          </div>
+          <div class="cal-day has-items" onclick="selectDay(this)">
+            <span class="cal-day-abbr">Fri</span>
+            <span class="cal-day-num">25</span>
+            <div class="cal-dot"></div>
+          </div>
+          <div class="cal-day" onclick="selectDay(this)">
+            <span class="cal-day-abbr">Sat</span>
+            <span class="cal-day-num">26</span>
+            <div class="cal-dot"></div>
+          </div>
+          <div class="cal-day" onclick="selectDay(this)">
+            <span class="cal-day-abbr">Sun</span>
+            <span class="cal-day-num">27</span>
+            <div class="cal-dot"></div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('reminders', this)">Reminders</button>
+          <button class="tab-btn" onclick="switchTab('events', this)">Events</button>
+        </div>
+
+        <!-- Reminders tab -->
+        <div class="tab-panel active" id="tab-reminders">
+          <div class="section-label" style="margin-top:8px;">Today</div>
+          <div class="item-list" id="remindersList">
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-red">💊</div>
+              <div class="item-body">
+                <div class="item-title">Take medication</div>
+                <div class="item-sub">Morning dose · Urgent</div>
+              </div>
+              <span class="item-time">8:00 AM</span>
+              <div class="item-actions">
+                <button class="action-btn done-btn" onclick="markDone(event,this)" title="Done">✓</button>
+                <button class="action-btn snooze-btn" onclick="snoozeItem(event,this)" title="Snooze">⏱</button>
+                <button class="action-btn" onclick="editItem(event,this,'Take medication','8:00 AM')" title="Edit">✎</button>
+              </div>
+            </div>
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-yellow">🌅</div>
+              <div class="item-body">
+                <div class="item-title">Morning stretch</div>
+                <div class="item-sub">10 minutes</div>
+              </div>
+              <span class="item-time">7:15 AM</span>
+              <div class="item-actions">
+                <button class="action-btn done-btn" onclick="markDone(event,this)" title="Done">✓</button>
+                <button class="action-btn snooze-btn" onclick="snoozeItem(event,this)" title="Snooze">⏱</button>
+                <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+              </div>
+            </div>
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-blue">💧</div>
+              <div class="item-body">
+                <div class="item-title">Drink water</div>
+                <div class="item-sub">2 glasses before commute</div>
+              </div>
+              <span class="item-time">7:30 AM</span>
+              <div class="item-actions">
+                <button class="action-btn done-btn" onclick="markDone(event,this)" title="Done">✓</button>
+                <button class="action-btn snooze-btn" onclick="snoozeItem(event,this)" title="Snooze">⏱</button>
+                <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+              </div>
+            </div>
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-purple">📞</div>
+              <div class="item-body">
+                <div class="item-title">Call Mom</div>
+                <div class="item-sub">Weekly check-in</div>
+              </div>
+              <span class="item-time">6:00 PM</span>
+              <div class="item-actions">
+                <button class="action-btn done-btn" onclick="markDone(event,this)" title="Done">✓</button>
+                <button class="action-btn snooze-btn" onclick="snoozeItem(event,this)" title="Snooze">⏱</button>
+                <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Events tab -->
+        <div class="tab-panel" id="tab-events">
+          <div class="section-label" style="margin-top:8px;">Morning</div>
+          <div class="item-list">
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-blue">🚇</div>
+              <div class="item-body">
+                <div class="item-title">Commute to office</div>
+                <div class="item-sub">Leave by 7:40 AM · 32 min</div>
+              </div>
+              <span class="cat-badge cat-commute">Commute</span>
+              <div class="item-actions">
+                <button class="action-btn" onclick="editItem(event,this,'Commute to office','7:40 AM')" title="Edit">✎</button>
+                <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+              </div>
+            </div>
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-purple">💼</div>
+              <div class="item-body">
+                <div class="item-title">Team standup</div>
+                <div class="item-sub">Google Meet · 15 min</div>
+              </div>
+              <span class="cat-badge cat-meeting">Meeting</span>
+              <div class="item-actions">
+                <button class="action-btn" onclick="editItem(event,this,'Team standup','9:00 AM')" title="Edit">✎</button>
+                <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="section-label">Afternoon</div>
+          <div class="item-list">
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-green">🥗</div>
+              <div class="item-body">
+                <div class="item-title">Lunch break</div>
+                <div class="item-sub">1:00 PM · 45 min</div>
+              </div>
+              <span class="cat-badge cat-personal">Personal</span>
+              <div class="item-actions">
+                <button class="action-btn" onclick="editItem(event,this,'Lunch break','1:00 PM')" title="Edit">✎</button>
+                <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+              </div>
+            </div>
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-purple">🎙</div>
+              <div class="item-body">
+                <div class="item-title">Product review</div>
+                <div class="item-sub">Conference room B · 1h</div>
+              </div>
+              <span class="cat-badge cat-meeting">Meeting</span>
+              <div class="item-actions">
+                <button class="action-btn" onclick="editItem(event,this,'Product review','3:00 PM')" title="Edit">✎</button>
+                <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+              </div>
+            </div>
+
+            <div class="list-item" onclick="toggleActions(this)">
+              <div class="item-icon icon-green">🏃</div>
+              <div class="item-body">
+                <div class="item-title">Evening run</div>
+                <div class="item-sub">5:30 PM · 30 min</div>
+              </div>
+              <span class="cat-badge cat-personal">Personal</span>
+              <div class="item-actions">
+                <button class="action-btn" onclick="editItem(event,this,'Evening run','5:30 PM')" title="Edit">✎</button>
+                <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /app-screen -->
+
+      <!-- ── Bottom bar ── -->
+      <div class="bottom-bar">
+        <button class="nav-icon-btn active" title="Calendar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </button>
+
+        <button class="fab" onclick="openAddModal()" title="Add task">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+
+        <button class="nav-icon-btn" onclick="openVoice()" title="Voice assistant">
+          <svg width="16" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- ── Lock screen notification overlay ── -->
+      <div class="notif-overlay" id="notifOverlay">
+        <div class="lock-time">7:28</div>
+        <div class="lock-date">Tuesday, April 22</div>
+
+        <div class="notif-card">
+          <div class="notif-header">
+            <div class="notif-app-icon">🌊</div>
+            <span class="notif-app-name">Flow</span>
+            <span class="notif-time-label">now</span>
+          </div>
+          <div class="notif-title">Leave in 15 minutes to avoid traffic</div>
+          <div class="notif-body">Your commute via Metro Line 2 takes ~32 min. Traffic is building on alternate routes.</div>
+          <div class="notif-actions">
+            <button class="notif-action-btn primary-action" onclick="dismissNotif()">Done</button>
+            <button class="notif-action-btn" onclick="snoozeNotif()">Snooze 15m</button>
+            <button class="notif-action-btn" onclick="dismissNotif()">View Plan</button>
+          </div>
+        </div>
+
+        <div class="lock-swipe-hint">Tap Done or swipe up to unlock</div>
+      </div>
+
+      <!-- ── Voice overlay ── -->
+      <div class="voice-overlay" id="voiceOverlay">
+        <div class="voice-card">
+          <div class="voice-title">Flow is listening…</div>
+          <div class="voice-waveform">
+            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+          <div class="voice-transcript" id="voiceTranscript">
+            <span id="transcriptText"></span><span class="cursor"></span>
+          </div>
+          <button class="voice-cancel" onclick="closeVoice()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- ── Add task modal ── -->
+      <div class="modal-overlay" id="addModal" onclick="handleModalClick(event)">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+          <div class="modal-handle"></div>
+          <div class="modal-title">New Task</div>
+          <input class="modal-input" id="taskInput" placeholder="What do you need to do?" type="text">
+          <input class="modal-input" id="taskTime" placeholder="Time (e.g. 5:00 PM)" type="text">
+          <div class="modal-row">
+            <button class="modal-type-btn selected" id="typeReminder" onclick="selectType('reminder')">Reminder</button>
+            <button class="modal-type-btn" id="typeEvent" onclick="selectType('event')">Event</button>
+          </div>
+          <button class="modal-add-btn" onclick="addTask()">Add to Flow</button>
+        </div>
+      </div>
+
+      <!-- ── Edit modal ── -->
+      <div class="edit-modal-overlay" id="editModal" onclick="closeEditModal()">
+        <div class="edit-modal-sheet" onclick="event.stopPropagation()">
+          <div class="modal-handle"></div>
+          <div class="modal-title">Edit Task</div>
+          <input class="modal-input" id="editInput" placeholder="Task name" type="text">
+          <input class="modal-input" id="editTime" placeholder="Time" type="text">
+          <button class="modal-add-btn" onclick="saveEdit()">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Toast -->
+      <div class="toast" id="toast"></div>
+
+      <!-- Home indicator -->
+      <div class="home-indicator"></div>
+
+    </div><!-- /phone-screen -->
+  </div><!-- /phone -->
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="ctrl-btn" onclick="showNotification()">🔔 Preview Notification</button>
+    <button class="ctrl-btn" onclick="openVoice()">🎙 Try Voice Input</button>
+    <button class="ctrl-btn" onclick="openAddModal()">＋ Add Task</button>
+  </div>
+
+</div><!-- /scene -->
+
+<script>
+// ── State ──
+let activeTab = 'reminders';
+let taskType = 'reminder';
+let editTarget = null;
+let voiceTimer = null;
+
+// ── Tab switching ──
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  activeTab = tab;
+}
+
+// ── Calendar day ──
+function selectDay(el) {
+  document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('today'));
+  el.classList.add('today');
+}
+
+// ── Item actions ──
+function toggleActions(item) {
+  const isOpen = item.classList.contains('show-actions');
+  document.querySelectorAll('.list-item').forEach(i => i.classList.remove('show-actions'));
+  if (!isOpen) item.classList.add('show-actions');
+}
+
+function markDone(e, btn) {
+  e.stopPropagation();
+  const item = btn.closest('.list-item');
+  item.classList.toggle('done');
+  item.classList.remove('show-actions');
+  showToast(item.classList.contains('done') ? '✓ Marked done' : 'Marked undone');
+}
+
+function snoozeItem(e, btn) {
+  e.stopPropagation();
+  const item = btn.closest('.list-item');
+  const titleEl = item.querySelector('.item-title');
+  const timeEl = item.querySelector('.item-time');
+  if (!item.querySelector('.snooze-badge')) {
+    const badge = document.createElement('span');
+    badge.className = 'snooze-badge';
+    badge.textContent = '+15m';
+    titleEl.after(badge);
+  }
+  item.classList.remove('show-actions');
+  showToast('⏱ Snoozed 15 minutes');
+}
+
+function deleteItem(e, btn) {
+  e.stopPropagation();
+  const item = btn.closest('.list-item');
+  item.classList.add('deleting');
+  setTimeout(() => item.remove(), 300);
+  showToast('Deleted');
+}
+
+// ── Edit ──
+function editItem(e, btn, name, time) {
+  e.stopPropagation();
+  editTarget = btn.closest('.list-item');
+  document.getElementById('editInput').value = name;
+  document.getElementById('editTime').value = time;
+  document.getElementById('editModal').classList.add('visible');
+  editTarget.classList.remove('show-actions');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('visible');
+  editTarget = null;
+}
+
+function saveEdit() {
+  if (!editTarget) return;
+  const name = document.getElementById('editInput').value.trim();
+  const time = document.getElementById('editTime').value.trim();
+  if (name) editTarget.querySelector('.item-title').textContent = name;
+  if (time) editTarget.querySelector('.item-time').textContent = time;
+  closeEditModal();
+  showToast('✎ Changes saved');
+}
+
+// ── Add task ──
+function openAddModal() {
+  document.getElementById('addModal').classList.add('visible');
+  setTimeout(() => document.getElementById('taskInput').focus(), 350);
+}
+
+function handleModalClick(e) {
+  if (e.target === document.getElementById('addModal')) {
+    document.getElementById('addModal').classList.remove('visible');
+  }
+}
+
+function selectType(type) {
+  taskType = type;
+  document.getElementById('typeReminder').classList.toggle('selected', type === 'reminder');
+  document.getElementById('typeEvent').classList.toggle('selected', type === 'event');
+}
+
+function addTask() {
+  const name = document.getElementById('taskInput').value.trim();
+  const time = document.getElementById('taskTime').value.trim() || 'Anytime';
+  if (!name) { document.getElementById('taskInput').style.borderColor = '#e63329'; return; }
+
+  const icons = { reminder: ['💡','⏰','📌','🔔'], event: ['📅','🗓','✅','🎯'] };
+  const icon = icons[taskType][Math.floor(Math.random() * 4)];
+  const colors = ['icon-yellow','icon-blue','icon-green','icon-purple','icon-red'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+
+  const item = document.createElement('div');
+  item.className = 'list-item';
+  item.style.opacity = '0';
+  item.style.transform = 'translateY(-8px)';
+  item.onclick = function() { toggleActions(this); };
+  item.innerHTML = `
+    <div class="item-icon ${color}">${icon}</div>
+    <div class="item-body">
+      <div class="item-title">${escHtml(name)}</div>
+      <div class="item-sub">Just added</div>
+    </div>
+    <span class="item-time">${escHtml(time)}</span>
+    <div class="item-actions">
+      <button class="action-btn done-btn" onclick="markDone(event,this)" title="Done">✓</button>
+      <button class="action-btn snooze-btn" onclick="snoozeItem(event,this)" title="Snooze">⏱</button>
+      <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+    </div>
+  `;
+
+  const list = taskType === 'reminder'
+    ? document.getElementById('remindersList')
+    : document.querySelector('#tab-events .item-list');
+
+  list.appendChild(item);
+  requestAnimationFrame(() => {
+    item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    item.style.opacity = '1';
+    item.style.transform = 'translateY(0)';
+  });
+
+  document.getElementById('taskInput').value = '';
+  document.getElementById('taskTime').value = '';
+  document.getElementById('addModal').classList.remove('visible');
+
+  if (taskType === 'reminder') switchTab('reminders', document.querySelector('.tab-btn'));
+  else switchTab('events', document.querySelectorAll('.tab-btn')[1]);
+
+  setTimeout(() => {
+    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+  showToast('✓ Added to Flow');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Notification ──
+function showNotification() {
+  document.getElementById('notifOverlay').classList.add('visible');
+}
+
+function dismissNotif() {
+  document.getElementById('notifOverlay').classList.remove('visible');
+  showToast('✓ Done — commute logged');
+}
+
+function snoozeNotif() {
+  document.getElementById('notifOverlay').classList.remove('visible');
+  showToast('⏱ Reminder in 15 minutes');
+}
+
+// ── Voice ──
+const voicePhrases = [
+  'Add meeting at 5 PM',
+  'Remind me to take medicine at 8 AM',
+  'Meeting with design team tomorrow',
+];
+
+function openVoice() {
+  document.getElementById('voiceOverlay').classList.add('visible');
+  const phrase = voicePhrases[Math.floor(Math.random() * voicePhrases.length)];
+  let i = 0;
+  const el = document.getElementById('transcriptText');
+  el.textContent = '';
+  clearInterval(voiceTimer);
+  setTimeout(() => {
+    voiceTimer = setInterval(() => {
+      if (i < phrase.length) {
+        el.textContent += phrase[i++];
+      } else {
+        clearInterval(voiceTimer);
+        setTimeout(() => {
+          closeVoice();
+          const name = phrase.replace(/^(add|remind me to)\s+/i, '').replace(/\s+at\s+.*/i, '');
+          const timeMatch = phrase.match(/(\d+\s*(am|pm))/i);
+          const time = timeMatch ? timeMatch[0] : 'Today';
+          addVoiceTask(name, time);
+        }, 800);
+      }
+    }, 60);
+  }, 600);
+}
+
+function closeVoice() {
+  clearInterval(voiceTimer);
+  document.getElementById('voiceOverlay').classList.remove('visible');
+  document.getElementById('transcriptText').textContent = '';
+}
+
+function addVoiceTask(name, time) {
+  const capitalised = name.charAt(0).toUpperCase() + name.slice(1);
+  const item = document.createElement('div');
+  item.className = 'list-item';
+  item.style.opacity = '0';
+  item.style.transform = 'translateY(-8px)';
+  item.onclick = function() { toggleActions(this); };
+  item.innerHTML = `
+    <div class="item-icon icon-blue">🎙</div>
+    <div class="item-body">
+      <div class="item-title">${escHtml(capitalised)}</div>
+      <div class="item-sub">Added via voice</div>
+    </div>
+    <span class="item-time">${escHtml(time)}</span>
+    <div class="item-actions">
+      <button class="action-btn done-btn" onclick="markDone(event,this)" title="Done">✓</button>
+      <button class="action-btn snooze-btn" onclick="snoozeItem(event,this)" title="Snooze">⏱</button>
+      <button class="action-btn del-btn" onclick="deleteItem(event,this)" title="Delete">✕</button>
+    </div>
+  `;
+
+  const tab = activeTab === 'events' ? document.querySelector('#tab-events .item-list') : document.getElementById('remindersList');
+  tab.appendChild(item);
+  requestAnimationFrame(() => {
+    item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    item.style.opacity = '1';
+    item.style.transform = 'translateY(0)';
+  });
+
+  showToast('🎙 Added via voice');
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Keyboard support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('notifOverlay').classList.remove('visible');
+    document.getElementById('voiceOverlay').classList.remove('visible');
+    document.getElementById('addModal').classList.remove('visible');
+    document.getElementById('editModal').classList.remove('visible');
+    closeVoice();
+  }
+  if (e.key === 'Enter' && document.getElementById('addModal').classList.contains('visible')) {
+    addTask();
+  }
+  if (e.key === 'Enter' && document.getElementById('editModal').classList.contains('visible')) {
+    saveEdit();
+  }
+});
+</script>
+</body>
+</html>
