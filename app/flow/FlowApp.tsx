@@ -49,12 +49,12 @@ const WEEK_DAYS = [
 const INITIAL_REMINDERS: Task[] = [
   { id: 'r1', title: 'Take medication', time: '8:00 AM', icon: '💊', iconName: 'health', iconBg: '#fff2f0', iconColor: '#e05252', sub: 'Morning dose · Urgent', done: false, snoozed: false },
   { id: 'r2', title: 'Morning stretch', time: '7:15 AM', icon: '🌅', iconName: 'sun', iconBg: '#fffbeb', iconColor: '#d97706', sub: '10 minutes', done: false, snoozed: false },
-  { id: 'r3', title: 'Drink water', time: '7:30 AM', icon: '💧', iconName: 'drop', iconBg: '#edf4ff', iconColor: '#4b96e8', sub: '2 glasses before commute', done: false, snoozed: false },
+  { id: 'r3', title: 'Drink water', time: '7:30 AM', icon: '💧', iconName: 'drop', iconBg: '#ede9fe', iconColor: '#C4B5FD', sub: '2 glasses before commute', done: false, snoozed: false },
   { id: 'r4', title: 'Call Mom', time: '6:00 PM', icon: '📞', iconName: 'people', iconBg: '#f4f0ff', iconColor: '#8b72e0', sub: 'Weekly check-in', done: false, snoozed: false },
 ];
 
 const INITIAL_EVENTS: Task[] = [
-  { id: 'e1', title: 'Commute to office', time: '7:40 AM', icon: '🚇', iconName: 'routing', iconBg: '#edf4ff', iconColor: '#4b96e8', sub: 'Leave by 7:40 AM · 32 min', done: false, snoozed: false, category: 'commute' },
+  { id: 'e1', title: 'Commute to office', time: '7:40 AM', icon: '🚇', iconName: 'routing', iconBg: '#ede9fe', iconColor: '#C4B5FD', sub: 'Leave by 7:40 AM · 32 min', done: false, snoozed: false, category: 'commute' },
   { id: 'e2', title: 'Team standup', time: '9:00 AM', icon: '💼', iconName: 'briefcase', iconBg: '#f4f0ff', iconColor: '#8b72e0', sub: 'Google Meet · 15 min', done: false, snoozed: false, category: 'meeting' },
   { id: 'e3', title: 'Lunch break', time: '1:00 PM', icon: '🥗', iconName: 'coffee', iconBg: '#edfaf3', iconColor: '#3daa6e', sub: '1:00 PM · 45 min', done: false, snoozed: false, category: 'personal' },
   { id: 'e4', title: 'Product review', time: '3:00 PM', icon: '🎙', iconName: 'people', iconBg: '#f4f0ff', iconColor: '#8b72e0', sub: 'Conference room B · 1h', done: false, snoozed: false, category: 'meeting' },
@@ -62,7 +62,7 @@ const INITIAL_EVENTS: Task[] = [
 ];
 
 const CATEGORY_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  commute: { bg: '#edf4ff', color: '#4b96e8', label: 'Commute' },
+  commute: { bg: '#ede9fe', color: '#C4B5FD', label: 'Commute' },
   meeting: { bg: '#f4f0ff', color: '#8b72e0', label: 'Meeting' },
   personal: { bg: '#edfaf3', color: '#3daa6e', label: 'Personal' },
   health:   { bg: '#fff2f0', color: '#e05252', label: 'Health' },
@@ -417,7 +417,7 @@ export default function FlowApp() {
       </div>
 
       {/* Bottom bar */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(250,250,250,0.94)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid #ebebeb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 36, paddingRight: 36, paddingTop: 16, paddingBottom: isMobile ? 'max(24px, env(safe-area-inset-bottom))' : 24, zIndex: 50 }}>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#fafafa', borderTop: '1px solid #ebebeb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 36, paddingRight: 36, paddingTop: 16, paddingBottom: isMobile ? 'max(24px, env(safe-area-inset-bottom))' : 24, zIndex: 50 }}>
         <button onClick={() => setShowReport(true)} style={{ ...navBtnStyle, background: '#f0f0f0' }}>
           <Chart size={18} color="#888" variant="Linear" />
         </button>
@@ -437,7 +437,7 @@ export default function FlowApp() {
         <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginTop: 6 }}>Tuesday, April 22</div>
         <div style={{ width: 'calc(100% - 32px)', marginTop: 32, background: 'rgba(255,255,255,0.13)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 20, padding: '14px 16px', transform: showNotif ? 'translateY(0)' : 'translateY(8px)', transition: 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <div style={{ width: 22, height: 22, background: 'linear-gradient(135deg,#8b72e0,#4b96e8)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 22, height: 22, background: 'linear-gradient(135deg,#8b72e0,#C4B5FD)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Magicpen size={12} color="#fff" variant="Bold" />
             </div>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>Flow</span>
@@ -586,63 +586,8 @@ export default function FlowApp() {
         </button>
       </BottomSheet>
 
-      {/* ── Commute sheet ────────────────────────────────────────────────────────── */}
-      <BottomSheet visible={showCommute} onDismiss={() => setShowCommute(false)} tall>
-        <SheetHandle />
-        <SheetTitle>Your Commute</SheetTitle>
-
-        {/* Route summary card */}
-        <div style={{ background: '#edf4ff', borderRadius: 14, padding: '14px', marginBottom: 16, border: '1px solid #d4e7ff' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#4b96e8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Route</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.3px' }}>
-                {COMMUTE_DATA.from} → {COMMUTE_DATA.to}
-              </div>
-              <div style={{ fontSize: 12, color: '#6b9fd4', marginTop: 3 }}>
-                Leave by {COMMUTE_DATA.leaveBy} · Arrive {COMMUTE_DATA.arriveBy}
-              </div>
-            </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#4b96e8', letterSpacing: '-1px', lineHeight: 1 }}>{COMMUTE_DATA.duration}</div>
-              <div style={{ fontSize: 10, color: '#6b9fd4', marginTop: 2 }}>total</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Steps */}
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#c8c8c8', marginBottom: 8 }}>Route Steps</div>
-        <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '4px 0', marginBottom: 16, border: '1px solid #efefef' }}>
-          {COMMUTE_DATA.steps.map((step, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderBottom: i < COMMUTE_DATA.steps.length - 1 ? '1px dashed #ededed' : 'none' }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: '#fff', border: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
-                {step.icon}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: '#0a0a0a' }}>{step.label}</div>
-                <div style={{ fontSize: 11, color: '#b0b0b0', marginTop: 2 }}>{step.sub}</div>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#4b96e8', flexShrink: 0 }}>{step.duration}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* AI suggestions */}
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#c8c8c8', marginBottom: 8 }}>AI Suggestions</div>
-        {COMMUTE_DATA.aiSuggestions.map((s, i) => {
-          const SuggIconComp: Icon | null = NUDGE_ICON_MAP[s.iconName] ?? null;
-          return (
-            <div key={i} style={{ background: '#f0ecff', borderRadius: 10, padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 8, alignItems: 'flex-start', border: '1px solid #e4deff' }}>
-              {SuggIconComp && <SuggIconComp size={13} color="#7c6ee0" variant="Bulk" style={{ marginTop: 1, flexShrink: 0 }} />}
-              <span style={{ fontSize: 12, color: '#5a4a8a', lineHeight: 1.45, flex: 1 }}>{s.text}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#8b72e0', flexShrink: 0, background: '#e4deff', padding: '2px 6px', borderRadius: 5 }}>{s.tag}</span>
-            </div>
-          );
-        })}
-
-        <div style={{ height: 14 }} />
-        <button onClick={() => setShowCommute(false)} style={primaryBtn}>Got it</button>
-      </BottomSheet>
+      {/* ── Commute full-screen page ─────────────────────────────────────────────── */}
+      <CommuteScreen visible={showCommute} onBack={() => setShowCommute(false)} isMobile={isMobile} />
 
       {/* Toast */}
       <div style={{ position: 'absolute', bottom: 100, left: '50%', transform: `translateX(-50%) translateY(${toastVisible ? 0 : 12}px)`, background: '#0a0a0a', color: '#fff', borderRadius: 20, padding: '8px 16px', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', opacity: toastVisible ? 1 : 0, transition: 'all 0.3s ease', zIndex: 300, pointerEvents: 'none' }}>{toast}</div>
@@ -664,7 +609,7 @@ export default function FlowApp() {
       <div style={{ width: 390, height: 844, background: '#1a1a1a', borderRadius: 54, position: 'relative', boxShadow: '0 0 0 1px #2a2a2a, 0 0 0 2px #0a0a0a, 0 40px 80px rgba(0,0,0,.35), 0 20px 40px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08)', overflow: 'hidden', flexShrink: 0 }}>
         <div style={{ position: 'absolute', left: -3, top: 140, width: 4, height: 36, background: '#2a2a2a', borderRadius: '2px 0 0 2px', boxShadow: '0 52px 0 #2a2a2a, 0 100px 0 #2a2a2a' }} />
         <div style={{ position: 'absolute', right: -3, top: 180, width: 4, height: 68, background: '#2a2a2a', borderRadius: '0 2px 2px 0' }} />
-        <div style={{ position: 'absolute', inset: 6, borderRadius: 48, background: '#fafafa', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 6, borderRadius: 48, background: '#fafafa', overflow: 'hidden', transform: 'translateZ(0)', clipPath: 'inset(0 round 48px)' }}>
           {/* Dynamic Island */}
           <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, background: '#0a0a0a', borderRadius: 20, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <div style={{ width: 7, height: 7, background: '#1a1a1a', borderRadius: '50%' }} />
@@ -825,7 +770,7 @@ function ABtn({ onClick, children, hoverBg, hoverColor }: { onClick: (e: React.M
 
 function BottomSheet({ visible, onDismiss, children, tall }: { visible: boolean; onDismiss: () => void; children: React.ReactNode; tall?: boolean }) {
   return (
-    <div onClick={onDismiss} style={{ position: 'absolute', inset: 0, zIndex: 150, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', opacity: visible ? 1 : 0, pointerEvents: visible ? 'all' : 'none', transition: 'opacity 0.25s ease' }}>
+    <div onClick={onDismiss} style={{ position: 'absolute', inset: 0, zIndex: 150, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', opacity: visible ? 1 : 0, pointerEvents: visible ? 'all' : 'none', transition: 'opacity 0.25s ease' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: tall ? '20px 20px 36px' : '20px 20px 32px', maxHeight: tall ? '88%' : '75%', overflowY: 'auto', transform: visible ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}>
         {children}
       </div>
@@ -848,6 +793,251 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
       <div style={{ fontSize: 20, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.5px', lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: 11, color: '#c0c0c0', marginTop: 4 }}>{sub}</div>
     </div>
+  );
+}
+
+function CommuteScreen({ visible, onBack, isMobile }: { visible: boolean; onBack: () => void; isMobile: boolean }) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 120,
+      background: '#fafafa',
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(24px)',
+      transition: 'opacity 0.28s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+      pointerEvents: visible ? 'all' : 'none',
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        paddingTop: isMobile ? 'max(52px, env(safe-area-inset-top))' : 68,
+        paddingLeft: 20, paddingRight: 20, paddingBottom: 12,
+        background: '#fafafa',
+        display: 'flex', alignItems: 'center', gap: 10,
+        flexShrink: 0,
+        borderBottom: '1px solid #f0f0f0',
+      }}>
+        <button onClick={onBack} style={{
+          width: 36, height: 36, borderRadius: 12,
+          background: '#f5f5f5', border: '1px solid #ebebeb',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', flexShrink: 0,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 12.5L5.5 8 10 3.5" stroke="#0a0a0a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.4px', lineHeight: 1.15 }}>Your Commute</div>
+          <div style={{ fontSize: 12, color: '#aaa', marginTop: 1 }}>Tuesday, April 22 · Leave by 7:40 AM</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#C4B5FD', letterSpacing: '-0.6px', lineHeight: 1 }}>32 min</div>
+          <div style={{ fontSize: 10, color: '#b0b0b0', marginTop: 1 }}>total</div>
+        </div>
+      </div>
+
+      {/* Map */}
+      <div style={{ position: 'relative', flexShrink: 0, height: 220, overflow: 'hidden' }}>
+        <CommuteMap />
+
+        {/* Leave by chip */}
+        <div style={{
+          position: 'absolute', bottom: 14, left: 16,
+          background: '#3daa6e', borderRadius: 10, padding: '6px 11px',
+          display: 'flex', alignItems: 'center', gap: 5,
+          boxShadow: '0 2px 8px rgba(61,170,110,0.3)',
+        }}>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <circle cx="5" cy="5" r="4" stroke="#fff" strokeWidth="1.2"/>
+            <path d="M5 3v2.2l1.4 1.4" stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          <span style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>Leave 7:40 AM</span>
+        </div>
+
+        {/* Arrive badge */}
+        <div style={{
+          position: 'absolute', bottom: 14, right: 16,
+          background: '#fff', borderRadius: 12, padding: '8px 12px',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.13)', border: '1px solid #ebebeb',
+        }}>
+          <div style={{ fontSize: 9, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Arrive</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>8:12 AM</div>
+        </div>
+
+        {/* Metro line label on map */}
+        <div style={{
+          position: 'absolute', top: 90, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(75,150,232,0.12)', borderRadius: 6,
+          padding: '3px 8px', backdropFilter: 'blur(4px)',
+        }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: '#C4B5FD', letterSpacing: '0.04em' }}>METRO LINE 2</span>
+        </div>
+      </div>
+
+      {/* Scrollable info */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px', paddingBottom: isMobile ? 'max(32px, env(safe-area-inset-bottom))' : 32 }}>
+
+        {/* Route steps */}
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#c0c0c0', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Route Steps</div>
+        <div style={{ background: '#f5f5f5', borderRadius: 16, overflow: 'hidden', marginBottom: 18 }}>
+          {COMMUTE_DATA.steps.map((step, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '13px 14px',
+              borderBottom: i < COMMUTE_DATA.steps.length - 1 ? '1px solid #ebebeb' : 'none',
+            }}>
+              {/* Step icon with connector line */}
+              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 11,
+                  background: '#fff', border: '1px solid #e5e5e5',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                }}>
+                  {step.icon}
+                </div>
+                {i < COMMUTE_DATA.steps.length - 1 && (
+                  <div style={{ position: 'absolute', top: 36, width: 1.5, height: 14, background: '#ddd', left: '50%', transform: 'translateX(-50%)' }} />
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#0a0a0a' }}>{step.label}</div>
+                <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{step.sub}</div>
+              </div>
+              <div style={{
+                fontSize: 12, fontWeight: 700, color: '#C4B5FD', flexShrink: 0,
+                background: '#ede9fe', padding: '4px 8px', borderRadius: 7,
+              }}>{step.duration}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* AI suggestions */}
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#c0c0c0', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>AI Suggestions</div>
+        {COMMUTE_DATA.aiSuggestions.map((s, i) => {
+          const SuggIcon: Icon | null = NUDGE_ICON_MAP[s.iconName] ?? null;
+          return (
+            <div key={i} style={{
+              background: '#f0ecff', borderRadius: 12, padding: '11px 13px', marginBottom: 8,
+              display: 'flex', gap: 9, alignItems: 'flex-start', border: '1px solid #e4deff',
+            }}>
+              {SuggIcon && <SuggIcon size={14} color="#7c6ee0" variant="Bulk" style={{ marginTop: 1, flexShrink: 0 }} />}
+              <span style={{ fontSize: 12, color: '#5a4a8a', lineHeight: 1.5, flex: 1 }}>{s.text}</span>
+              <span style={{
+                fontSize: 9, fontWeight: 700, color: '#8b72e0', flexShrink: 0,
+                background: '#e4deff', padding: '3px 7px', borderRadius: 5, marginTop: 1,
+              }}>{s.tag}</span>
+            </div>
+          );
+        })}
+
+      </div>
+    </div>
+  );
+}
+
+function CommuteMap() {
+  return (
+    <svg
+      width="100%" height="220"
+      viewBox="0 0 390 220"
+      preserveAspectRatio="xMidYMid slice"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Map background */}
+      <rect width="390" height="220" fill="#e9eef3" />
+
+      {/* Subtle block fills between streets */}
+      <rect x="0" y="0" width="55" height="37" fill="#dfe5eb" opacity="0.6" />
+      <rect x="65" y="0" width="70" height="37" fill="#e2e8ed" opacity="0.5" />
+      <rect x="145" y="0" width="60" height="37" fill="#dfe5eb" opacity="0.45" />
+      <rect x="215" y="0" width="70" height="37" fill="#e2e8ed" opacity="0.5" />
+      <rect x="295" y="0" width="40" height="37" fill="#dfe5eb" opacity="0.4" />
+      <rect x="0" y="43" width="55" height="53" fill="#e2e8ed" opacity="0.5" />
+      <rect x="65" y="43" width="70" height="53" fill="#dfe5eb" opacity="0.45" />
+      <rect x="145" y="43" width="60" height="53" fill="#e2e8ed" opacity="0.5" />
+      <rect x="215" y="43" width="70" height="53" fill="#dfe5eb" opacity="0.45" />
+      <rect x="295" y="43" width="40" height="53" fill="#e2e8ed" opacity="0.4" />
+      <rect x="345" y="43" width="45" height="53" fill="#dfe5eb" opacity="0.4" />
+      <rect x="0" y="102" width="55" height="53" fill="#dfe5eb" opacity="0.45" />
+      <rect x="65" y="102" width="70" height="53" fill="#e2e8ed" opacity="0.5" />
+      <rect x="145" y="102" width="60" height="53" fill="#dfe5eb" opacity="0.4" />
+      <rect x="215" y="102" width="70" height="53" fill="#e2e8ed" opacity="0.45" />
+      <rect x="295" y="102" width="40" height="53" fill="#dfe5eb" opacity="0.4" />
+      <rect x="345" y="102" width="45" height="53" fill="#e2e8ed" opacity="0.35" />
+      <rect x="0" y="161" width="55" height="59" fill="#e2e8ed" opacity="0.5" />
+      <rect x="65" y="161" width="70" height="59" fill="#dfe5eb" opacity="0.45" />
+      <rect x="145" y="161" width="60" height="59" fill="#e2e8ed" opacity="0.4" />
+      <rect x="215" y="161" width="70" height="59" fill="#dfe5eb" opacity="0.4" />
+
+      {/* Horizontal roads */}
+      <line x1="0" y1="40" x2="390" y2="40" stroke="#fff" strokeWidth="9"/>
+      <line x1="0" y1="100" x2="390" y2="100" stroke="#fff" strokeWidth="7"/>
+      <line x1="0" y1="160" x2="390" y2="160" stroke="#fff" strokeWidth="9"/>
+
+      {/* Vertical roads */}
+      <line x1="60" y1="0" x2="60" y2="220" stroke="#fff" strokeWidth="9"/>
+      <line x1="140" y1="0" x2="140" y2="220" stroke="#fff" strokeWidth="7"/>
+      <line x1="215" y1="0" x2="215" y2="220" stroke="#fff" strokeWidth="9"/>
+      <line x1="295" y1="0" x2="295" y2="220" stroke="#fff" strokeWidth="7"/>
+      <line x1="345" y1="0" x2="345" y2="220" stroke="#fff" strokeWidth="5"/>
+
+      {/* Road centre lines (dashed) */}
+      <line x1="0" y1="40" x2="390" y2="40" stroke="#e0e6eb" strokeWidth="1" strokeDasharray="6 5"/>
+      <line x1="0" y1="100" x2="390" y2="100" stroke="#e0e6eb" strokeWidth="1" strokeDasharray="6 5"/>
+      <line x1="0" y1="160" x2="390" y2="160" stroke="#e0e6eb" strokeWidth="1" strokeDasharray="6 5"/>
+
+      {/* Street name labels */}
+      <text x="195" y="36" textAnchor="middle" fontSize="7" fill="#c0c8d0" fontFamily="system-ui,sans-serif">CENTRAL AVE</text>
+      <text x="195" y="96" textAnchor="middle" fontSize="7" fill="#c0c8d0" fontFamily="system-ui,sans-serif">MAIN STREET</text>
+      <text x="195" y="156" textAnchor="middle" fontSize="7" fill="#c0c8d0" fontFamily="system-ui,sans-serif">PARK ROAD</text>
+
+      {/* Route glow (drawn first, underneath) */}
+      <path d="M50 195 L60 160" stroke="#C4B5FD" strokeWidth="12" strokeLinecap="round" opacity="0.1"/>
+      <path d="M60 160 C95 152 120 85 215 78 C258 74 282 46 320 38" stroke="#C4B5FD" strokeWidth="12" strokeLinecap="round" fill="none" opacity="0.1"/>
+      <path d="M320 38 L345 28" stroke="#C4B5FD" strokeWidth="12" strokeLinecap="round" opacity="0.1"/>
+
+      {/* Walk segment: home → metro station */}
+      <path d="M50 195 L60 160" stroke="#C4B5FD" strokeWidth="2.5" strokeDasharray="4.5 3" strokeLinecap="round"/>
+      {/* Metro route */}
+      <path d="M60 160 C95 152 120 85 215 78 C258 74 282 46 320 38" stroke="#C4B5FD" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
+      {/* Walk segment: metro → office */}
+      <path d="M320 38 L345 28" stroke="#C4B5FD" strokeWidth="2.5" strokeDasharray="4.5 3" strokeLinecap="round"/>
+
+      {/* Home marker */}
+      <circle cx="50" cy="195" r="13" fill="#fff" opacity="0.9"/>
+      <circle cx="50" cy="195" r="8" fill="#3daa6e"/>
+      <circle cx="50" cy="195" r="16" stroke="#3daa6e" strokeWidth="2" fill="none" opacity="0.22"/>
+      {/* Home icon dot */}
+      <circle cx="50" cy="193" r="2.5" fill="#fff"/>
+
+      {/* Metro station A (boarding) */}
+      <circle cx="60" cy="160" r="7" fill="#fff"/>
+      <circle cx="60" cy="160" r="4.5" fill="#C4B5FD"/>
+      <circle cx="60" cy="160" r="9" stroke="#C4B5FD" strokeWidth="1.5" fill="none" opacity="0.3"/>
+
+      {/* Metro mid-stop */}
+      <circle cx="215" cy="78" r="5" fill="#fff"/>
+      <circle cx="215" cy="78" r="3" fill="#C4B5FD"/>
+
+      {/* Metro station B (alighting) */}
+      <circle cx="320" cy="38" r="7" fill="#fff"/>
+      <circle cx="320" cy="38" r="4.5" fill="#C4B5FD"/>
+      <circle cx="320" cy="38" r="9" stroke="#C4B5FD" strokeWidth="1.5" fill="none" opacity="0.3"/>
+
+      {/* Office pin */}
+      <path d="M345 12 C340.5 12 337 15.5 337 20 C337 25.5 345 34 345 34 C345 34 353 25.5 353 20 C353 15.5 349.5 12 345 12Z" fill="#0a0a0a"/>
+      <circle cx="345" cy="20" r="3.5" fill="#fff"/>
+
+      {/* Labels */}
+      <text x="50" y="213" textAnchor="middle" fontSize="8.5" fill="#3daa6e" fontWeight="700" fontFamily="system-ui,sans-serif">HOME</text>
+      <text x="345" y="46" textAnchor="middle" fontSize="8.5" fill="#0a0a0a" fontWeight="700" fontFamily="system-ui,sans-serif">OFFICE</text>
+
+      {/* Station labels */}
+      <text x="75" y="155" fontSize="7.5" fill="#C4B5FD" fontWeight="600" fontFamily="system-ui,sans-serif">Park St.</text>
+      <text x="313" y="32" fontSize="7.5" fill="#C4B5FD" fontWeight="600" fontFamily="system-ui,sans-serif" textAnchor="end">Downtown</text>
+    </svg>
   );
 }
 
