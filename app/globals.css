@@ -40,3 +40,10 @@
 .animate-blink { animation: blink 1s step-end infinite; }
 .animate-fade-in { animation: fadeIn 0.3s ease forwards; }
 .item-deleting { animation: fadeSlideOut 0.3s ease forwards; }
+
+@keyframes mic-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(139,114,224,0.55); }
+  70% { box-shadow: 0 0 0 14px rgba(139,114,224,0); }
+  100% { box-shadow: 0 0 0 0 rgba(139,114,224,0); }
+}
+.mic-listening { animation: mic-pulse 1.5s ease-out infinite; }

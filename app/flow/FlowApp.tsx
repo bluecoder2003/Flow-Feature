@@ -5,7 +5,7 @@ import {
   ProfileCircle, SearchNormal1, Calendar1,
   Microphone2, Chart, TickCircle, Clock, Edit2, Trash,
   Magicpen, Health, Sun1, Routing2, Briefcase, People,
-  Coffee, Activity, Drop, AddSquare,
+  Coffee, Activity, Drop,
   CloudChange, Flash, Medal, LocationDiscover,
   type Icon,
 } from 'iconsax-react';
@@ -16,8 +16,8 @@ interface Task {
   id: string;
   title: string;
   time: string;
-  icon: string;           // emoji fallback (voice / user-added tasks)
-  iconName?: string;      // Iconsax icon key for predefined tasks
+  icon: string;
+  iconName?: string;
   iconBg: string;
   iconColor: string;
   sub: string;
@@ -26,40 +26,24 @@ interface Task {
   category?: 'commute' | 'meeting' | 'personal' | 'health';
 }
 
-// ─── Iconsax icon map ─────────────────────────────────────────────────────────
+// ─── Icon maps ────────────────────────────────────────────────────────────────
 
 const TASK_ICON_MAP: Record<string, Icon> = {
-  health: Health,
-  sun: Sun1,
-  drop: Drop,
-  routing: Routing2,
-  briefcase: Briefcase,
-  people: People,
-  coffee: Coffee,
-  activity: Activity,
-  mic: Microphone2,
-  calendar: Calendar1,
+  health: Health, sun: Sun1, drop: Drop, routing: Routing2,
+  briefcase: Briefcase, people: People, coffee: Coffee,
+  activity: Activity, mic: Microphone2, calendar: Calendar1,
 };
 
 const NUDGE_ICON_MAP: Record<string, Icon> = {
-  routing: Routing2,
-  health: Health,
-  cloud: CloudChange,
-  flash: Flash,
-  medal: Medal,
-  location: LocationDiscover,
+  routing: Routing2, health: Health, cloud: CloudChange,
+  flash: Flash, medal: Medal, location: LocationDiscover,
 };
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
 const WEEK_DAYS = [
-  { abbr: 'MON', num: 21 },
-  { abbr: 'TUE', num: 22 },
-  { abbr: 'WED', num: 23 },
-  { abbr: 'THU', num: 24 },
-  { abbr: 'FRI', num: 25 },
-  { abbr: 'SAT', num: 26 },
-  { abbr: 'SUN', num: 27 },
+  { abbr: 'MON', num: 21 }, { abbr: 'TUE', num: 22 }, { abbr: 'WED', num: 23 },
+  { abbr: 'THU', num: 24 }, { abbr: 'FRI', num: 25 }, { abbr: 'SAT', num: 26 }, { abbr: 'SUN', num: 27 },
 ];
 
 const INITIAL_REMINDERS: Task[] = [
@@ -87,7 +71,7 @@ const CATEGORY_STYLE: Record<string, { bg: string; color: string; label: string 
 const VOICE_PHRASES = [
   'Add meeting at 5 PM',
   'Remind me to take medicine at 8 AM',
-  'Meeting with design team tomorrow',
+  'Event with design team tomorrow',
 ];
 
 const AI_NUDGES = [
@@ -102,6 +86,31 @@ const AI_NUDGES = [
 const WEEKLY_STATS = { tasksCompleted: 23, tasksTotal: 28, remindersHandled: 14, remindersSnoozed: 4, onTimeCommutes: 4, totalCommutes: 5, avgLeaveTime: '7:42 AM', longestStreak: 'Morning stretch · 5 days', moodScore: 82 };
 const MONTHLY_STATS = { tasksCompleted: 89, tasksTotal: 112, remindersHandled: 61, remindersSnoozed: 18, onTimeCommutes: 17, totalCommutes: 22, avgLeaveTime: '7:44 AM', longestStreak: 'Morning stretch · 12 days', moodScore: 78 };
 
+const COMMUTE_DATA = {
+  from: 'Home',
+  to: 'Office',
+  leaveBy: '7:40 AM',
+  arriveBy: '8:12 AM',
+  duration: '32 min',
+  steps: [
+    { icon: '🚶', label: 'Walk to Metro Station', duration: '5 min', sub: 'Approx 400m' },
+    { icon: '🚇', label: 'Metro Line 2', duration: '22 min', sub: 'Towards Downtown' },
+    { icon: '🚶', label: 'Walk to Office', duration: '5 min', sub: 'From Downtown Station' },
+  ],
+  aiSuggestions: [
+    { iconName: 'routing', text: 'Traffic 18% heavier. Leave at 7:35 to stay on time.', tag: 'Commute' },
+    { iconName: 'location', text: 'Metro Line 2 delayed. Bus 42 saves 8 min.', tag: 'Alert' },
+    { iconName: 'cloud', text: 'Light rain at 7:40 AM. Pack an umbrella today.', tag: 'Weather' },
+  ],
+};
+
+function detectCategory(text: string): 'reminder' | 'event' | null {
+  const lower = text.toLowerCase();
+  if (lower.includes('remind')) return 'reminder';
+  if (lower.includes('event') || lower.includes('meeting') || lower.includes('appointment')) return 'event';
+  return null;
+}
+
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -111,10 +120,10 @@ export default function FlowApp() {
   const [reminders, setReminders]         = useState<Task[]>(INITIAL_REMINDERS);
   const [events, setEvents]               = useState<Task[]>(INITIAL_EVENTS);
   const [showNotif, setShowNotif]         = useState(false);
-  const [showVoice, setShowVoice]         = useState(false);
   const [showAdd, setShowAdd]             = useState(false);
   const [showEdit, setShowEdit]           = useState(false);
   const [showReport, setShowReport]       = useState(false);
+  const [showCommute, setShowCommute]     = useState(false);
   const [reportPeriod, setReportPeriod]   = useState<'weekly' | 'monthly'>('weekly');
   const [editTarget, setEditTarget]       = useState<Task | null>(null);
   const [toast, setToast]                 = useState('');
@@ -122,9 +131,11 @@ export default function FlowApp() {
   const [taskType, setTaskType]           = useState<'reminder' | 'event'>('reminder');
   const [taskInput, setTaskInput]         = useState('');
   const [taskTime, setTaskTime]           = useState('');
+  const [taskDetails, setTaskDetails]     = useState('');
+  const [isListening, setIsListening]     = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
   const [editInput, setEditInput]         = useState('');
   const [editTimeVal, setEditTimeVal]     = useState('');
-  const [voiceTranscript, setVoiceTranscript] = useState('');
   const [selectedDay, setSelectedDay]     = useState(22);
   const [deletingIds, setDeletingIds]     = useState<Set<string>>(new Set());
   const [nudgeIdx, setNudgeIdx]           = useState(0);
@@ -144,7 +155,6 @@ export default function FlowApp() {
     toastTimer.current = setTimeout(() => setToastVisible(false), 2200);
   }, []);
 
-  // Mobile detection
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
     setIsMobile(mq.matches);
@@ -153,7 +163,6 @@ export default function FlowApp() {
     return () => mq.removeEventListener('change', h);
   }, []);
 
-  // Rotate AI nudges
   useEffect(() => {
     nudgeTimer.current = setInterval(() => {
       setNudgeFading(true);
@@ -197,51 +206,63 @@ export default function FlowApp() {
     setShowEdit(false); setEditTarget(null); showToast('✎ Changes saved');
   };
 
+  const stopModalMic = useCallback(() => {
+    if (voiceTimer.current) clearInterval(voiceTimer.current);
+    setIsListening(false);
+    setVoiceTranscript('');
+  }, []);
+
+  const closeAddModal = useCallback(() => {
+    stopModalMic();
+    setShowAdd(false);
+    setTaskInput('');
+    setTaskTime('');
+    setTaskDetails('');
+  }, [stopModalMic]);
+
+  const handleTaskInputChange = (val: string) => {
+    setTaskInput(val);
+    const detected = detectCategory(val);
+    if (detected) setTaskType(detected);
+  };
+
   const addTask = () => {
     if (!taskInput.trim()) return;
+    const detected = detectCategory(taskInput);
+    const type = detected ?? taskType;
     const bgs = ['#fffbeb', '#edf4ff', '#edfaf3', '#f4f0ff', '#fff2f0'];
     const newTask: Task = {
       id: uid(), title: taskInput.trim(),
-      time: taskTime.trim() || 'Anytime', icon: taskType === 'reminder' ? '🔔' : '📅',
+      time: taskTime.trim() || 'Anytime', icon: type === 'reminder' ? '🔔' : '📅',
       iconBg: bgs[Math.floor(Math.random() * bgs.length)], iconColor: '#888',
-      sub: 'Just added', done: false, snoozed: false,
+      sub: taskDetails.trim() || 'Just added', done: false, snoozed: false,
     };
-    if (taskType === 'reminder') { setReminders(r => [...r, newTask]); setActiveTab('reminders'); }
+    if (type === 'reminder') { setReminders(r => [...r, newTask]); setActiveTab('reminders'); }
     else { setEvents(e => [...e, newTask]); setActiveTab('events'); }
-    setTaskInput(''); setTaskTime(''); setShowAdd(false); showToast('✓ Added to Flow');
+    setTaskInput(''); setTaskTime(''); setTaskDetails('');
+    setShowAdd(false); showToast('✓ Added to Flow');
   };
 
-  const openVoice = () => {
-    setShowVoice(true); setVoiceTranscript('');
+  const openModalMic = () => {
+    setIsListening(true);
+    setVoiceTranscript('');
     const phrase = VOICE_PHRASES[Math.floor(Math.random() * VOICE_PHRASES.length)];
     let i = 0;
     if (voiceTimer.current) clearInterval(voiceTimer.current);
     setTimeout(() => {
       voiceTimer.current = setInterval(() => {
-        if (i < phrase.length) { setVoiceTranscript(phrase.slice(0, ++i)); }
-        else {
+        if (i < phrase.length) {
+          const partial = phrase.slice(0, ++i);
+          setVoiceTranscript(partial);
+          setTaskInput(partial);
+          const detected = detectCategory(partial);
+          if (detected) setTaskType(detected);
+        } else {
           if (voiceTimer.current) clearInterval(voiceTimer.current);
-          setTimeout(() => {
-            setShowVoice(false); setVoiceTranscript('');
-            const name = phrase.replace(/^(add|remind me to)\s+/i, '').replace(/\s+at\s+.*/i, '');
-            const timeMatch = phrase.match(/(\d+\s*(am|pm))/i);
-            const newTask: Task = {
-              id: uid(), title: name.charAt(0).toUpperCase() + name.slice(1),
-              time: timeMatch ? timeMatch[0] : 'Today', icon: '🎙', iconName: 'mic',
-              iconBg: '#edf4ff', iconColor: '#4b96e8', sub: 'Added via voice',
-              done: false, snoozed: false,
-            };
-            setReminders(r => [...r, newTask]); setActiveTab('reminders');
-            showToast('🎙 Added via voice');
-          }, 800);
+          setTimeout(() => setIsListening(false), 600);
         }
       }, 60);
-    }, 600);
-  };
-
-  const closeVoice = () => {
-    if (voiceTimer.current) clearInterval(voiceTimer.current);
-    setShowVoice(false); setVoiceTranscript('');
+    }, 400);
   };
 
   const handleDownload = () => {
@@ -264,7 +285,10 @@ export default function FlowApp() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setShowNotif(false); closeVoice(); setShowAdd(false); setShowEdit(false); setShowReport(false); }
+      if (e.key === 'Escape') {
+        setShowNotif(false); closeAddModal(); setShowEdit(false);
+        setShowReport(false); setShowCommute(false);
+      }
       if (e.key === 'Enter' && showAdd) addTask();
       if (e.key === 'Enter' && showEdit) saveEdit();
     };
@@ -278,7 +302,6 @@ export default function FlowApp() {
   const completionPct = Math.round((stats.tasksCompleted / stats.tasksTotal) * 100);
   const commutePct = Math.round((stats.onTimeCommutes / stats.totalCommutes) * 100);
 
-  // ── Shared app content (same on mobile and desktop) ──────────────────────────
   const appContent = (
     <>
       {/* Scrollable */}
@@ -360,7 +383,7 @@ export default function FlowApp() {
           <div>
             <SectionLabel>Today</SectionLabel>
             <div style={{ padding: '0 24px', marginTop: 2 }}>
-              {reminders.length === 0 && <EmptyState text="No reminders — tap + to add one" />}
+              {reminders.length === 0 && <EmptyState text="No reminders — tap the mic to add one" />}
               {reminders.map(task => (
                 <TaskRow key={task.id} task={task} deleting={deletingIds.has(task.id)}
                   onDone={() => markDone(task.id)} onSnooze={() => snoozeTask(task.id)}
@@ -398,11 +421,13 @@ export default function FlowApp() {
         <button onClick={() => setShowReport(true)} style={{ ...navBtnStyle, background: '#f0f0f0' }}>
           <Chart size={18} color="#888" variant="Linear" />
         </button>
+        {/* Center: unified add+voice button */}
         <button onClick={() => setShowAdd(true)} style={{ width: 54, height: 54, borderRadius: 18, background: '#0a0a0a', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,.2)' }}>
-          <AddSquare size={22} color="#fff" variant="Linear" />
+          <Microphone2 size={22} color="#fff" variant="Linear" />
         </button>
-        <button onClick={openVoice} style={{ ...navBtnStyle, background: '#f0f0f0' }}>
-          <Microphone2 size={18} color="#888" variant="Linear" />
+        {/* Right: commute view */}
+        <button onClick={() => setShowCommute(true)} style={{ ...navBtnStyle, background: '#f0f0f0' }}>
+          <Routing2 size={18} color="#888" variant="Linear" />
         </button>
       </div>
 
@@ -433,38 +458,73 @@ export default function FlowApp() {
         <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Tap Done or swipe up to unlock</div>
       </div>
 
-      {/* Voice overlay */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 150, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 100, opacity: showVoice ? 1 : 0, pointerEvents: showVoice ? 'all' : 'none', transition: 'opacity 0.25s ease' }}>
-        <div style={{ width: 'calc(100% - 32px)', background: '#fff', borderRadius: 20, padding: '20px 20px 16px', boxShadow: '0 12px 40px rgba(0,0,0,.14)', transform: showVoice ? 'translateY(0)' : 'translateY(16px)', transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-            <Microphone2 size={14} color="#8b72e0" variant="Linear" />
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Flow is listening…</span>
-          </div>
-          <div style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginBottom: 12 }}>
-            {[12, 22, 30, 36, 30, 22, 14, 26, 32, 18].map((h, i) => (
-              <div key={i} className="animate-wave" style={{ width: 3, height: h, background: '#8b72e0', borderRadius: 2, animationDelay: `${i * 0.08}s` }} />
-            ))}
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 500, color: '#0a0a0a', textAlign: 'center', minHeight: 22, marginBottom: 12 }}>
-            {voiceTranscript}
-            {showVoice && <span className="animate-blink" style={{ display: 'inline-block', width: 2, height: 15, background: '#3EAF78', marginLeft: 2, borderRadius: 1, verticalAlign: 'text-bottom' }} />}
-          </div>
-          <button onClick={closeVoice} style={{ width: '100%', background: '#f5f5f5', border: 'none', borderRadius: 12, color: '#888', fontFamily: 'inherit', fontSize: 14, fontWeight: 500, padding: 10, cursor: 'pointer' }}>Cancel</button>
-        </div>
-      </div>
-
-      {/* Add task sheet */}
-      <BottomSheet visible={showAdd} onDismiss={() => setShowAdd(false)}>
+      {/* ── Unified Add + Voice modal ────────────────────────────────────────────── */}
+      <BottomSheet visible={showAdd} onDismiss={closeAddModal}>
         <SheetHandle />
-        <SheetTitle>New Task</SheetTitle>
-        <input ref={addInputRef} value={taskInput} onChange={e => setTaskInput(e.target.value)} placeholder="What do you need to do?" style={inputSt} />
-        <input value={taskTime} onChange={e => setTaskTime(e.target.value)} placeholder="Time (e.g. 5:00 PM)" style={{ ...inputSt, marginTop: 0 }} />
+        <SheetTitle>Add to Flow</SheetTitle>
+
+        {/* Voice section */}
+        <div style={{ background: isListening ? '#f0ecff' : '#f8f8f8', borderRadius: 14, padding: '16px 14px', marginBottom: 14, border: `1px solid ${isListening ? '#e4deff' : '#efefef'}`, transition: 'all 0.25s ease', textAlign: 'center' }}>
+          <button
+            onClick={isListening ? stopModalMic : openModalMic}
+            className={isListening ? 'mic-listening' : ''}
+            style={{
+              width: 52, height: 52, borderRadius: '50%',
+              background: isListening ? '#8b72e0' : '#efefef',
+              border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', margin: '0 auto 8px',
+              transition: 'all 0.25s ease',
+            }}
+          >
+            <Microphone2 size={22} color={isListening ? '#fff' : '#8b72e0'} variant={isListening ? 'Bold' : 'Linear'} />
+          </button>
+          <div style={{ fontSize: 11, fontWeight: 600, color: isListening ? '#8b72e0' : '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em', transition: 'color 0.25s' }}>
+            {isListening ? 'Flow is listening…' : 'Tap to speak'}
+          </div>
+          {isListening && (
+            <div style={{ height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginTop: 10 }}>
+              {[10, 18, 26, 32, 26, 18, 12, 22, 28, 16].map((h, i) => (
+                <div key={i} className="animate-wave" style={{ width: 3, height: h, background: '#8b72e0', borderRadius: 2, animationDelay: `${i * 0.08}s` }} />
+              ))}
+            </div>
+          )}
+          {voiceTranscript && !isListening && (
+            <div style={{ fontSize: 12, color: '#7c6ee0', marginTop: 8, fontStyle: 'italic', lineHeight: 1.4 }}>
+              &ldquo;{voiceTranscript}&rdquo;
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: '#ebebeb' }} />
+          <span style={{ fontSize: 11, color: '#c8c8c8', fontWeight: 500 }}>or type</span>
+          <div style={{ flex: 1, height: 1, background: '#ebebeb' }} />
+        </div>
+
+        {/* Inputs */}
+        <input
+          ref={addInputRef}
+          value={taskInput}
+          onChange={e => handleTaskInputChange(e.target.value)}
+          placeholder="What do you need to add?"
+          style={inputSt}
+        />
+        <div style={{ fontSize: 11, color: '#c0c0c0', marginTop: -6, marginBottom: 10, paddingLeft: 2 }}>
+          Say &ldquo;Reminder&rdquo; or &ldquo;Event&rdquo; to categorize
+        </div>
+        <input value={taskTime} onChange={e => setTaskTime(e.target.value)} placeholder="Time (e.g. 5:00 PM)" style={inputSt} />
+        <input value={taskDetails} onChange={e => setTaskDetails(e.target.value)} placeholder="Optional details" style={{ ...inputSt, marginBottom: 0 }} />
+
+        {/* Category pills */}
         <div style={{ display: 'flex', gap: 8, margin: '10px 0 14px' }}>
           {(['reminder', 'event'] as const).map(t => (
-            <button key={t} onClick={() => setTaskType(t)} style={{ flex: 1, borderRadius: 10, border: '1px solid #e8e8e8', background: taskType === t ? '#0a0a0a' : '#f5f5f5', color: taskType === t ? '#fff' : '#888', fontFamily: 'inherit', fontSize: 12, fontWeight: 500, padding: '8px 0', cursor: 'pointer', textTransform: 'capitalize' }}>{t}</button>
+            <button key={t} onClick={() => setTaskType(t)} style={{ flex: 1, borderRadius: 10, border: '1px solid #e8e8e8', background: taskType === t ? '#0a0a0a' : '#f5f5f5', color: taskType === t ? '#fff' : '#888', fontFamily: 'inherit', fontSize: 12, fontWeight: 500, padding: '8px 0', cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s' }}>{t}</button>
           ))}
         </div>
+
         <button onClick={addTask} style={primaryBtn}>Add to Flow</button>
+        <button onClick={closeAddModal} style={secondaryBtn}>Cancel</button>
       </BottomSheet>
 
       {/* Edit sheet */}
@@ -526,15 +586,71 @@ export default function FlowApp() {
         </button>
       </BottomSheet>
 
+      {/* ── Commute sheet ────────────────────────────────────────────────────────── */}
+      <BottomSheet visible={showCommute} onDismiss={() => setShowCommute(false)} tall>
+        <SheetHandle />
+        <SheetTitle>Your Commute</SheetTitle>
+
+        {/* Route summary card */}
+        <div style={{ background: '#edf4ff', borderRadius: 14, padding: '14px', marginBottom: 16, border: '1px solid #d4e7ff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#4b96e8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Route</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.3px' }}>
+                {COMMUTE_DATA.from} → {COMMUTE_DATA.to}
+              </div>
+              <div style={{ fontSize: 12, color: '#6b9fd4', marginTop: 3 }}>
+                Leave by {COMMUTE_DATA.leaveBy} · Arrive {COMMUTE_DATA.arriveBy}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#4b96e8', letterSpacing: '-1px', lineHeight: 1 }}>{COMMUTE_DATA.duration}</div>
+              <div style={{ fontSize: 10, color: '#6b9fd4', marginTop: 2 }}>total</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#c8c8c8', marginBottom: 8 }}>Route Steps</div>
+        <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '4px 0', marginBottom: 16, border: '1px solid #efefef' }}>
+          {COMMUTE_DATA.steps.map((step, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderBottom: i < COMMUTE_DATA.steps.length - 1 ? '1px dashed #ededed' : 'none' }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: '#fff', border: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                {step.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#0a0a0a' }}>{step.label}</div>
+                <div style={{ fontSize: 11, color: '#b0b0b0', marginTop: 2 }}>{step.sub}</div>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#4b96e8', flexShrink: 0 }}>{step.duration}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* AI suggestions */}
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#c8c8c8', marginBottom: 8 }}>AI Suggestions</div>
+        {COMMUTE_DATA.aiSuggestions.map((s, i) => {
+          const SuggIconComp: Icon | null = NUDGE_ICON_MAP[s.iconName] ?? null;
+          return (
+            <div key={i} style={{ background: '#f0ecff', borderRadius: 10, padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 8, alignItems: 'flex-start', border: '1px solid #e4deff' }}>
+              {SuggIconComp && <SuggIconComp size={13} color="#7c6ee0" variant="Bulk" style={{ marginTop: 1, flexShrink: 0 }} />}
+              <span style={{ fontSize: 12, color: '#5a4a8a', lineHeight: 1.45, flex: 1 }}>{s.text}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#8b72e0', flexShrink: 0, background: '#e4deff', padding: '2px 6px', borderRadius: 5 }}>{s.tag}</span>
+            </div>
+          );
+        })}
+
+        <div style={{ height: 14 }} />
+        <button onClick={() => setShowCommute(false)} style={primaryBtn}>Got it</button>
+      </BottomSheet>
+
       {/* Toast */}
       <div style={{ position: 'absolute', bottom: 100, left: '50%', transform: `translateX(-50%) translateY(${toastVisible ? 0 : 12}px)`, background: '#0a0a0a', color: '#fff', borderRadius: 20, padding: '8px 16px', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', opacity: toastVisible ? 1 : 0, transition: 'all 0.3s ease', zIndex: 300, pointerEvents: 'none' }}>{toast}</div>
 
-      {/* Home indicator — desktop phone frame only */}
       {!isMobile && <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 120, height: 5, background: 'rgba(0,0,0,0.15)', borderRadius: 3 }} />}
     </>
   );
 
-  // ── Mobile: full-screen native app ───────────────────────────────────────────
   if (isMobile) {
     return (
       <div style={{ position: 'fixed', inset: 0, fontFamily: 'var(--font-dm-sans, system-ui)', background: '#fafafa', overflow: 'hidden' }}>
@@ -543,7 +659,6 @@ export default function FlowApp() {
     );
   }
 
-  // ── Desktop: phone-frame preview ─────────────────────────────────────────────
   return (
     <div style={{ fontFamily: 'var(--font-dm-sans, system-ui)', background: '#ebebeb', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{ width: 390, height: 844, background: '#1a1a1a', borderRadius: 54, position: 'relative', boxShadow: '0 0 0 1px #2a2a2a, 0 0 0 2px #0a0a0a, 0 40px 80px rgba(0,0,0,.35), 0 20px 40px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08)', overflow: 'hidden', flexShrink: 0 }}>
@@ -567,35 +682,29 @@ export default function FlowApp() {
   );
 }
 
-// ─── Shared style objects ─────────────────────────────────────────────────────
+// ─── Shared styles ────────────────────────────────────────────────────────────
 
 const iconBtnStyle: React.CSSProperties = { width: 36, height: 36, borderRadius: 12, border: '1px solid #ebebeb', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
 const navBtnStyle:  React.CSSProperties = { width: 44, height: 44, borderRadius: 14, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
-const inputSt: React.CSSProperties = { width: '100%', background: '#f5f5f5', border: '1px solid #e8e8e8', borderRadius: 12, padding: '12px 14px', fontFamily: 'var(--font-dm-sans, system-ui)', fontSize: 15, color: '#0a0a0a', outline: 'none', marginBottom: 10, display: 'block' };
+const inputSt: React.CSSProperties = { width: '100%', background: '#f5f5f5', border: '1px solid #e8e8e8', borderRadius: 12, padding: '12px 14px', fontFamily: 'var(--font-dm-sans, system-ui)', fontSize: 15, color: '#0a0a0a', outline: 'none', marginBottom: 10, display: 'block', boxSizing: 'border-box' };
 const primaryBtn: React.CSSProperties = { width: '100%', background: '#0a0a0a', color: '#fff', border: 'none', borderRadius: 14, fontFamily: 'var(--font-dm-sans, system-ui)', fontSize: 15, fontWeight: 600, padding: 14, cursor: 'pointer' };
+const secondaryBtn: React.CSSProperties = { width: '100%', background: 'transparent', color: '#aaa', border: 'none', borderRadius: 14, fontFamily: 'var(--font-dm-sans, system-ui)', fontSize: 14, fontWeight: 500, padding: '10px 14px', cursor: 'pointer', marginTop: 6 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function FlowIllustration() {
   return (
     <svg width="68" height="58" viewBox="0 0 68 58" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, marginTop: 2 }}>
-      {/* Curved commute route */}
       <path d="M6 46 Q18 18 34 30 Q50 42 62 12" stroke="#7c6ee0" strokeWidth="1.6" strokeDasharray="3.5 2.5" strokeLinecap="round" opacity="0.45" />
-      {/* Origin dot */}
       <circle cx="6" cy="46" r="3.5" stroke="#7c6ee0" strokeWidth="1.5" fill="none" opacity="0.55" />
       <circle cx="6" cy="46" r="1.2" fill="#7c6ee0" opacity="0.4" />
-      {/* Destination pin */}
       <path d="M62 6 C58.5 6 56 8.5 56 12 C56 16.5 62 22 62 22 C62 22 68 16.5 68 12 C68 8.5 65.5 6 62 6Z" stroke="#7c6ee0" strokeWidth="1.5" fill="none" opacity="0.5" />
       <circle cx="62" cy="12" r="1.8" fill="#7c6ee0" opacity="0.45" />
-      {/* Sparkle top-left */}
       <line x1="22" y1="8" x2="22" y2="3" stroke="#7c6ee0" strokeWidth="1.4" strokeLinecap="round" opacity="0.45" />
       <line x1="19.5" y1="5.5" x2="24.5" y2="5.5" stroke="#7c6ee0" strokeWidth="1.4" strokeLinecap="round" opacity="0.45" />
-      {/* Sparkle bottom-right */}
       <line x1="48" y1="50" x2="48" y2="46" stroke="#7c6ee0" strokeWidth="1.3" strokeLinecap="round" opacity="0.35" />
       <line x1="46" y1="48" x2="50" y2="48" stroke="#7c6ee0" strokeWidth="1.3" strokeLinecap="round" opacity="0.35" />
-      {/* Diamond accent mid-path */}
       <path d="M34 16 L36.5 20 L34 24 L31.5 20 Z" stroke="#7c6ee0" strokeWidth="1.3" fill="none" opacity="0.38" />
-      {/* Small circle stop */}
       <circle cx="34" cy="30" r="2.5" stroke="#7c6ee0" strokeWidth="1.3" fill="none" opacity="0.35" />
     </svg>
   );
@@ -665,48 +774,18 @@ function TaskRow({ task, deleting, onDone, onSnooze, onDelete, onEdit, showCateg
   return (
     <div className={deleting ? 'item-deleting' : ''}
       style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px dashed #ededed' }}>
-
-      {/* Swipe-right reveal: done */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: `rgba(61,170,110,${dragX > 0 ? progress * 0.2 : 0})`,
-        display: 'flex', alignItems: 'center', paddingLeft: 14,
-        transition: dragging ? 'none' : 'background 0.3s',
-      }}>
-        <TickCircle size={18} color="#3daa6e" variant="Bulk"
-          style={{ opacity: dragX > 0 ? progress : 0, transition: dragging ? 'none' : 'opacity 0.3s' }} />
+      <div style={{ position: 'absolute', inset: 0, background: `rgba(61,170,110,${dragX > 0 ? progress * 0.2 : 0})`, display: 'flex', alignItems: 'center', paddingLeft: 14, transition: dragging ? 'none' : 'background 0.3s' }}>
+        <TickCircle size={18} color="#3daa6e" variant="Bulk" style={{ opacity: dragX > 0 ? progress : 0, transition: dragging ? 'none' : 'opacity 0.3s' }} />
       </div>
-
-      {/* Swipe-left reveal: delete */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: `rgba(224,82,82,${dragX < 0 ? progress * 0.2 : 0})`,
-        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 14,
-        transition: dragging ? 'none' : 'background 0.3s',
-      }}>
-        <Trash size={18} color="#e05252" variant="Bulk"
-          style={{ opacity: dragX < 0 ? progress : 0, transition: dragging ? 'none' : 'opacity 0.3s' }} />
+      <div style={{ position: 'absolute', inset: 0, background: `rgba(224,82,82,${dragX < 0 ? progress * 0.2 : 0})`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 14, transition: dragging ? 'none' : 'background 0.3s' }}>
+        <Trash size={18} color="#e05252" variant="Bulk" style={{ opacity: dragX < 0 ? progress : 0, transition: dragging ? 'none' : 'opacity 0.3s' }} />
       </div>
-
-      {/* Row */}
       <div
-        onPointerDown={onPtrDown}
-        onPointerMove={onPtrMove}
-        onPointerUp={onPtrUp}
-        onPointerCancel={onPtrUp}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0',
-          cursor: 'grab', position: 'relative', opacity: task.done ? 0.45 : 1,
-          transform: `translateX(${dragX}px)`,
-          transition: dragging ? 'none' : 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)',
-          background: '#fafafa', touchAction: 'pan-y', userSelect: 'none',
-        }}
+        onPointerDown={onPtrDown} onPointerMove={onPtrMove} onPointerUp={onPtrUp} onPointerCancel={onPtrUp}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', cursor: 'grab', position: 'relative', opacity: task.done ? 0.45 : 1, transform: `translateX(${dragX}px)`, transition: dragging ? 'none' : 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)', background: '#fafafa', touchAction: 'pan-y', userSelect: 'none' }}
       >
         <div style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          {IconComp
-            ? <IconComp size={26} color={task.iconColor} variant="Bulk" />
-            : <span style={{ fontSize: 22, lineHeight: 1 }}>{task.icon}</span>
-          }
+          {IconComp ? <IconComp size={26} color={task.iconColor} variant="Bulk" /> : <span style={{ fontSize: 22, lineHeight: 1 }}>{task.icon}</span>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 500, letterSpacing: '-0.2px', textDecoration: task.done ? 'line-through' : 'none', color: task.done ? '#c0c0c0' : '#0a0a0a' }}>
@@ -720,15 +799,8 @@ function TaskRow({ task, deleting, onDone, onSnooze, onDelete, onEdit, showCateg
           : <span style={{ fontSize: 13, color: '#c0c0c0', flexShrink: 0 }}>{task.time}</span>
         }
       </div>
-
-      {/* Long-press context menu */}
       {showMenu && (
-        <div onClick={e => e.stopPropagation()} style={{
-          position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 20,
-          display: 'flex', gap: 5, background: 'rgba(250,250,250,0.97)',
-          padding: '4px 6px', borderRadius: 12,
-          boxShadow: '0 3px 16px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)',
-        }}>
+        <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 20, display: 'flex', gap: 5, background: 'rgba(250,250,250,0.97)', padding: '4px 6px', borderRadius: 12, boxShadow: '0 3px 16px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)' }}>
           <ABtn onClick={e => { e.stopPropagation(); setShowMenu(false); onEdit(); }} hoverBg="#f5f5f5" hoverColor="#555">
             <Edit2 size={14} color="currentColor" variant="Linear" />
           </ABtn>
@@ -754,7 +826,7 @@ function ABtn({ onClick, children, hoverBg, hoverColor }: { onClick: (e: React.M
 function BottomSheet({ visible, onDismiss, children, tall }: { visible: boolean; onDismiss: () => void; children: React.ReactNode; tall?: boolean }) {
   return (
     <div onClick={onDismiss} style={{ position: 'absolute', inset: 0, zIndex: 150, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', opacity: visible ? 1 : 0, pointerEvents: visible ? 'all' : 'none', transition: 'opacity 0.25s ease' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: tall ? '20px 20px 36px' : '20px 20px 32px', maxHeight: tall ? '88%' : '70%', overflowY: tall ? 'auto' : 'visible', transform: visible ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: tall ? '20px 20px 36px' : '20px 20px 32px', maxHeight: tall ? '88%' : '75%', overflowY: 'auto', transform: visible ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}>
         {children}
       </div>
     </div>
@@ -776,14 +848,6 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
       <div style={{ fontSize: 20, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.5px', lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: 11, color: '#c0c0c0', marginTop: 4 }}>{sub}</div>
     </div>
-  );
-}
-
-function CtrlBtn({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button onClick={onClick} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 20, padding: '8px 16px', fontFamily: 'var(--font-dm-sans, system-ui)', fontSize: 12, fontWeight: 500, color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
-      {children}
-    </button>
   );
 }
 
