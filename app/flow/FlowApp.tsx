@@ -14,6 +14,13 @@ import { PersonSimpleWalk, Train, Timer, Umbrella } from '@phosphor-icons/react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+interface DetectedIntent {
+  type: 'move' | 'delete' | 'edit';
+  task: Task;
+  newTime?: string;
+  label: string;
+}
+
 interface Task {
   id: string;
   title: string;
@@ -70,9 +77,11 @@ const CATEGORY_STYLE: Record<string, { bg: string; color: string; label: string 
 };
 
 const VOICE_PHRASES = [
+  'Move my standup to 10 AM',
+  'Delete lunch meeting',
+  'Change product review to 4 PM',
   'Add meeting at 5 PM',
   'Remind me to take medicine at 8 AM',
-  'Event with design team tomorrow',
 ];
 
 const AI_NUDGES = [
@@ -137,6 +146,8 @@ export default function FlowApp() {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [editInput, setEditInput]         = useState('');
   const [editTimeVal, setEditTimeVal]     = useState('');
+  const [editDetails, setEditDetails]     = useState('');
+  const [detectedIntent, setDetectedIntent] = useState<DetectedIntent | null>(null);
   const [selectedDay, setSelectedDay]     = useState(22);
   const [deletingIds, setDeletingIds]     = useState<Set<string>>(new Set());
   const [nudgeIdx, setNudgeIdx]           = useState(3);
@@ -197,15 +208,9 @@ export default function FlowApp() {
   };
 
   const openEdit = (task: Task) => {
-    setEditTarget(task); setEditInput(task.title); setEditTimeVal(task.time);
+    setEditTarget(task); setEditInput(task.title); setEditTimeVal(task.time); setEditDetails(task.sub);
+    setTaskType(task.category === 'meeting' || task.category === 'commute' || task.category === 'personal' ? 'event' : 'reminder');
     setShowEdit(true);
-  };
-
-  const saveEdit = () => {
-    if (!editTarget) return;
-    const update = (ts: Task[]) => ts.map(t => t.id === editTarget.id ? { ...t, title: editInput || t.title, time: editTimeVal || t.time } : t);
-    setReminders(update); setEvents(update);
-    setShowEdit(false); setEditTarget(null); showToast('✎ Changes saved');
   };
 
   const stopModalMic = useCallback(() => {
@@ -214,18 +219,92 @@ export default function FlowApp() {
     setVoiceTranscript('');
   }, []);
 
+  const closeEditModal = useCallback(() => {
+    stopModalMic();
+    setShowEdit(false);
+    setEditTarget(null);
+    setEditInput('');
+    setEditTimeVal('');
+    setEditDetails('');
+  }, [stopModalMic]);
+
+  const saveEdit = () => {
+    if (!editTarget) return;
+    const update = (ts: Task[]) => ts.map(t =>
+      t.id === editTarget.id
+        ? { ...t, title: editInput || t.title, time: editTimeVal || t.time, sub: editDetails || t.sub }
+        : t
+    );
+    setReminders(update); setEvents(update);
+    closeEditModal(); showToast('✎ Changes saved');
+  };
+
+  const findBestMatch = (fragment: string, tasks: Task[]): Task | null => {
+    const lower = fragment.toLowerCase().trim();
+    const exact = tasks.find(t => t.title.toLowerCase().includes(lower) || lower.includes(t.title.toLowerCase()));
+    if (exact) return exact;
+    const words = lower.split(/\s+/).filter(w => w.length > 2);
+    let best: Task | null = null; let bestScore = 0;
+    for (const t of tasks) {
+      const score = words.filter(w => t.title.toLowerCase().includes(w)).length;
+      if (score > bestScore) { best = t; bestScore = score; }
+    }
+    return bestScore > 0 ? best : null;
+  };
+
+  const parseIntent = (input: string): DetectedIntent | null => {
+    const lower = input.toLowerCase().trim();
+    const all = [...reminders, ...events];
+    const moveM = lower.match(/(?:move|reschedule|change|update|shift|set)\s+(?:my\s+)?(.+?)\s+to\s+(\d+(?::\d+)?\s*(?:am|pm))/i);
+    if (moveM) {
+      const task = findBestMatch(moveM[1], all);
+      if (task) return { type: 'move', task, newTime: moveM[2].trim(), label: `Update "${task.title}" to ${moveM[2].trim()}?` };
+    }
+    const delM = lower.match(/(?:delete|remove|cancel)\s+(?:my\s+)?(.+)/i);
+    if (delM) {
+      const task = findBestMatch(delM[1], all);
+      if (task) return { type: 'delete', task, label: `Delete "${task.title}"?` };
+    }
+    const editM = lower.match(/(?:change|edit|update)\s+(?:my\s+)?(.+?)(?:\s+time)?$/i);
+    if (editM) {
+      const task = findBestMatch(editM[1], all);
+      if (task) return { type: 'edit', task, label: `Edit "${task.title}"?` };
+    }
+    return null;
+  };
+
+  const confirmIntent = () => {
+    if (!detectedIntent) return;
+    if (detectedIntent.type === 'move' && detectedIntent.newTime) {
+      const t = detectedIntent.newTime;
+      const update = (ts: Task[]) => ts.map(r => r.id === detectedIntent.task.id ? { ...r, time: t } : r);
+      setReminders(update); setEvents(update);
+      showToast(`✓ "${detectedIntent.task.title}" moved to ${t}`);
+      closeAddModal();
+    } else if (detectedIntent.type === 'delete') {
+      deleteTask(detectedIntent.task.id);
+      closeAddModal();
+    } else if (detectedIntent.type === 'edit') {
+      closeAddModal();
+      openEdit(detectedIntent.task);
+    }
+  };
+
   const closeAddModal = useCallback(() => {
     stopModalMic();
     setShowAdd(false);
     setTaskInput('');
     setTaskTime('');
     setTaskDetails('');
+    setDetectedIntent(null);
   }, [stopModalMic]);
 
   const handleTaskInputChange = (val: string) => {
     setTaskInput(val);
     const detected = detectCategory(val);
     if (detected) setTaskType(detected);
+    const intent = parseIntent(val);
+    setDetectedIntent(intent);
   };
 
   const addTask = () => {
@@ -259,6 +338,7 @@ export default function FlowApp() {
           setTaskInput(partial);
           const detected = detectCategory(partial);
           if (detected) setTaskType(detected);
+          setDetectedIntent(parseIntent(partial));
         } else {
           if (voiceTimer.current) clearInterval(voiceTimer.current);
           setTimeout(() => setIsListening(false), 600);
@@ -307,7 +387,10 @@ export default function FlowApp() {
   const appContent = (
     <>
       {/* Scrollable */}
-      <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden', paddingTop: isMobile ? 'max(16px, env(safe-area-inset-top))' : 60, paddingBottom: 100, background: '#f6f5fb' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflowX: 'hidden', background: '#f6f5fb' }}>
+
+      {/* ── Fixed header (greeting → tabs) ── */}
+      <div style={{ flexShrink: 0, paddingTop: isMobile ? 'max(16px, env(safe-area-inset-top))' : 60 }}>
 
         {/* Greeting */}
         <div style={{ padding: '18px 24px 0' }}>
@@ -374,6 +457,11 @@ export default function FlowApp() {
           ))}
         </div>
 
+      </div>{/* end fixed header */}
+
+      {/* ── Scrollable list ── */}
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 100 }}>
+
         {/* Reminders */}
         {activeTab === 'reminders' && (
           <div>
@@ -410,7 +498,9 @@ export default function FlowApp() {
             </div>
           </div>
         )}
-      </div>
+
+      </div>{/* end scrollable list */}
+      </div>{/* end outer flex */}
 
       {/* Bottom bar */}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#f6f5fb', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 36, paddingRight: 36, paddingTop: 14, paddingBottom: isMobile ? 'max(22px, env(safe-area-inset-bottom))' : 22, zIndex: 50 }}>
@@ -458,7 +548,23 @@ export default function FlowApp() {
       {/* ── Unified Add + Voice modal ────────────────────────────────────────────── */}
       <BottomSheet visible={showAdd} onDismiss={closeAddModal}>
         <SheetHandle />
-        <SheetTitle>Add to Flow</SheetTitle>
+        <SheetTitle>Manage your day</SheetTitle>
+
+        {/* Smart intent confirmation card */}
+        {detectedIntent && (
+          <div style={{ background: '#f0ecff', border: '1.5px solid #c4b5fd', borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#8b72e0', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+              {detectedIntent.type === 'delete' ? '✦ Smart Delete' : detectedIntent.type === 'move' ? '✦ Smart Update' : '✦ Smart Edit'}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#1a0a3e', marginBottom: 12, lineHeight: 1.35 }}>{detectedIntent.label}</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={confirmIntent} style={{ flex: 1, background: '#7c6ee0', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {detectedIntent.type === 'delete' ? 'Delete' : 'Confirm'}
+              </button>
+              <button onClick={() => setDetectedIntent(null)} style={{ flex: 1, background: '#ede9fe', color: '#7c6ee0', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>Edit Manually</button>
+            </div>
+          </div>
+        )}
 
         {/* Voice section */}
         <div style={{ background: isListening ? '#f0ecff' : '#f8f8f8', borderRadius: 14, padding: '16px 14px', marginBottom: 14, border: `1px solid ${isListening ? '#e4deff' : '#efefef'}`, transition: 'all 0.25s ease', textAlign: 'center' }}>
@@ -504,11 +610,11 @@ export default function FlowApp() {
           ref={addInputRef}
           value={taskInput}
           onChange={e => handleTaskInputChange(e.target.value)}
-          placeholder="What do you need to add?"
+          placeholder='e.g. "Move standup to 10 AM" or "Add lunch at 1 PM"'
           style={inputSt}
         />
         <div style={{ fontSize: 11, color: '#c0c0c0', marginTop: -6, marginBottom: 10, paddingLeft: 2 }}>
-          Say &ldquo;Reminder&rdquo; or &ldquo;Event&rdquo; to categorize
+          Say &ldquo;Move&rdquo;, &ldquo;Delete&rdquo;, or &ldquo;Add&rdquo; and Flow will detect your intent
         </div>
         <input value={taskTime} onChange={e => setTaskTime(e.target.value)} placeholder="Time (e.g. 5:00 PM)" style={inputSt} />
         <input value={taskDetails} onChange={e => setTaskDetails(e.target.value)} placeholder="Optional details" style={{ ...inputSt, marginBottom: 0 }} />
@@ -521,16 +627,61 @@ export default function FlowApp() {
         </div>
 
         <button onClick={addTask} style={primaryBtn}>Add to Flow</button>
+
         <button onClick={closeAddModal} style={secondaryBtn}>Cancel</button>
       </BottomSheet>
 
       {/* Edit sheet */}
-      <BottomSheet visible={showEdit} onDismiss={() => setShowEdit(false)}>
+      <BottomSheet visible={showEdit} onDismiss={closeEditModal}>
         <SheetHandle />
-        <SheetTitle>Edit Task</SheetTitle>
-        <input value={editInput} onChange={e => setEditInput(e.target.value)} placeholder="Task name" style={inputSt} />
-        <input value={editTimeVal} onChange={e => setEditTimeVal(e.target.value)} placeholder="Time" style={{ ...inputSt, marginTop: 0, marginBottom: 14 }} />
+        <SheetTitle>Edit {editTarget?.category === 'meeting' || editTarget?.category === 'commute' || editTarget?.category === 'personal' ? 'Event' : 'Reminder'}</SheetTitle>
+
+        {/* Voice section */}
+        <div style={{ background: isListening ? '#f0ecff' : '#f8f8f8', borderRadius: 14, padding: '16px 14px', marginBottom: 14, border: `1px solid ${isListening ? '#e4deff' : '#efefef'}`, transition: 'all 0.25s ease', textAlign: 'center' }}>
+          <button
+            onClick={isListening ? stopModalMic : openModalMic}
+            className={isListening ? 'mic-listening' : ''}
+            style={{
+              width: 52, height: 52, borderRadius: '50%',
+              background: isListening ? '#8b72e0' : '#efefef',
+              border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', margin: '0 auto 8px',
+              transition: 'all 0.25s ease',
+            }}
+          >
+            <Microphone2 size={22} color={isListening ? '#fff' : '#8b72e0'} variant={isListening ? 'Bold' : 'Linear'} />
+          </button>
+          <div style={{ fontSize: 11, fontWeight: 600, color: isListening ? '#8b72e0' : '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em', transition: 'color 0.25s' }}>
+            {isListening ? 'Flow is listening…' : 'Voice your edits'}
+          </div>
+          {isListening && (
+            <div style={{ height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginTop: 10 }}>
+              {[10, 18, 26, 32, 26, 18, 12, 22, 28, 16].map((h, i) => (
+                <div key={i} className="animate-wave" style={{ width: 3, height: h, background: '#8b72e0', borderRadius: 2, animationDelay: `${i * 0.08}s` }} />
+              ))}
+            </div>
+          )}
+          {voiceTranscript && !isListening && (
+            <div style={{ fontSize: 12, color: '#7c6ee0', marginTop: 8, fontStyle: 'italic', lineHeight: 1.4 }}>
+              &ldquo;{voiceTranscript}&rdquo;
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: '#ebebeb' }} />
+          <span style={{ fontSize: 11, color: '#c8c8c8', fontWeight: 500 }}>or edit manually</span>
+          <div style={{ flex: 1, height: 1, background: '#ebebeb' }} />
+        </div>
+
+        {/* Inputs */}
+        <input value={editInput} onChange={e => setEditInput(e.target.value)} placeholder="Name" style={inputSt} />
+        <input value={editTimeVal} onChange={e => setEditTimeVal(e.target.value)} placeholder="Time (e.g. 5:00 PM)" style={inputSt} />
+        <input value={editDetails} onChange={e => setEditDetails(e.target.value)} placeholder="Additional details" style={{ ...inputSt, marginBottom: 14 }} />
+
         <button onClick={saveEdit} style={primaryBtn}>Save Changes</button>
+        <button onClick={closeEditModal} style={secondaryBtn}>Cancel</button>
       </BottomSheet>
 
       {/* Report sheet */}
@@ -771,6 +922,9 @@ function TaskRow({ task, deleting, onDone, onSnooze, onDelete, onEdit, showCateg
           </div>
           <div style={{ fontSize: 12, color: '#b8b8b8', marginTop: 2 }}>{task.sub}</div>
         </div>
+        {!showMenu && task.time && task.time !== 'Anytime' && (
+          <span style={{ fontSize: 11, fontWeight: 600, background: '#ede9fe', color: '#8b72e0', borderRadius: 20, padding: '3px 9px', flexShrink: 0, whiteSpace: 'nowrap' }}>{task.time}</span>
+        )}
         {showCategory && cat && (
           <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', background: cat.bg, color: cat.color, borderRadius: 6, padding: '2px 7px', flexShrink: 0 }}>{cat.label}</span>
         )}
