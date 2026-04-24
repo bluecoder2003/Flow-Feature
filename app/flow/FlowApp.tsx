@@ -143,7 +143,7 @@ export default function FlowApp() {
   const [nudgeFading, setNudgeFading]     = useState(false);
   const [downloadState, setDownloadState] = useState<'idle' | 'loading' | 'done'>('idle');
   const [isMobile, setIsMobile]           = useState(false);
-  const [showLockScreen, setShowLockScreen] = useState(false);
+  const [showLockScreen, setShowLockScreen] = useState(true);
 
   const toastTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceTimer  = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -591,8 +591,8 @@ export default function FlowApp() {
 
       {!isMobile && <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 120, height: 5, background: 'rgba(0,0,0,0.15)', borderRadius: 3 }} />}
 
-      {/* Lock screen overlay — rendered inside phone frame */}
-      {!isMobile && <LockScreenOverlay visible={showLockScreen} onClose={() => setShowLockScreen(false)} />}
+      {/* Lock screen overlay */}
+      <LockScreenOverlay visible={showLockScreen} onClose={() => setShowLockScreen(false)} />
     </>
   );
 
