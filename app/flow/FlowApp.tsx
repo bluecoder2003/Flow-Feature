@@ -1235,6 +1235,7 @@ function LockScreenOverlay({ visible, onClose }: { visible: boolean; onClose: ()
         {/* Notification 1 — Traffic */}
         <div
           className={visible ? 'notif-slide-1' : ''}
+          onClick={onClose}
           style={{
             background: 'rgba(242,238,255,0.84)',
             backdropFilter: 'blur(22px)',
@@ -1242,6 +1243,7 @@ function LockScreenOverlay({ visible, onClose }: { visible: boolean; onClose: ()
             borderRadius: 18,
             padding: '13px 14px 12px',
             border: '1px solid rgba(255,255,255,0.35)',
+            cursor: 'pointer',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -1279,6 +1281,7 @@ function LockScreenOverlay({ visible, onClose }: { visible: boolean; onClose: ()
         {/* Notification 2 — Message */}
         <div
           className={visible ? 'notif-slide-2' : ''}
+          onClick={onClose}
           style={{
             background: 'rgba(242,238,255,0.84)',
             backdropFilter: 'blur(22px)',
@@ -1286,6 +1289,7 @@ function LockScreenOverlay({ visible, onClose }: { visible: boolean; onClose: ()
             borderRadius: 18,
             padding: '13px 14px',
             border: '1px solid rgba(255,255,255,0.35)',
+            cursor: 'pointer',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
